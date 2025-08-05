@@ -43,6 +43,22 @@
             align-items: center;
             gap: 15px;
         }
+
+        .teacher-profile-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .teacher-profile-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
         
         .logout-btn {
             background: rgba(255,255,255,0.2);
@@ -245,7 +261,8 @@
         <div class="header-content">
             <div class="logo">📚 School Platform</div>
             <div class="user-info">
-                <span>Welcome, Ms. Johnson</span>
+                <span id="welcomeMessage">Welcome, Teacher</span>
+                <a href="teacher-profile.html" class="teacher-profile-btn">👨‍🏫 My Profile</a>
                 <button class="logout-btn" onclick="logout()">Logout</button>
             </div>
         </div>
@@ -453,16 +470,33 @@
 
         // Update greeting based on time of day
         function updateGreeting() {
+            // Get teacher name from profile
+            const savedProfile = localStorage.getItem('schoolPlatform_teacherProfile');
+            let teacherName = 'Teacher';
+            
+            if (savedProfile) {
+                try {
+                    const profile = JSON.parse(savedProfile);
+                    teacherName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Teacher';
+                } catch (e) {
+                    console.log('Error loading teacher name:', e);
+                }
+            }
+            
             const hour = new Date().getHours();
             const welcomeElement = document.querySelector('.welcome h1');
-            const name = 'Ms. Johnson';
+            const headerWelcome = document.getElementById('welcomeMessage');
             
+            // Update header
+            headerWelcome.textContent = `Welcome, ${teacherName}`;
+            
+            // Update main greeting
             if (hour < 12) {
-                welcomeElement.textContent = `Good Morning, ${name}! 🌅`;
+                welcomeElement.textContent = `Good Morning, ${teacherName}! 🌅`;
             } else if (hour < 17) {
-                welcomeElement.textContent = `Good Afternoon, ${name}! ☀️`;
+                welcomeElement.textContent = `Good Afternoon, ${teacherName}! ☀️`;
             } else {
-                welcomeElement.textContent = `Good Evening, ${name}! 🌇`;
+                welcomeElement.textContent = `Good Evening, ${teacherName}! 🌇`;
             }
         }
 
@@ -606,9 +640,9 @@
             }
         }
 
-        // Quick Add Student function
+        // Quick Add Student function - redirects to full student profile creation
         function quickAddStudent() {
-            // Get available classes
+            // Check if classes exist
             const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
             let classes = {};
             
@@ -627,41 +661,9 @@
                 return;
             }
             
-            // Simple prompt for quick add
-            const studentName = prompt('👤 Enter student name:');
-            if (!studentName) return;
-            
-            const studentId = prompt('🆔 Enter student ID:');
-            if (!studentId) return;
-            
-            // Show class selection
-            let classOptions = classNames.map((name, index) => `${index + 1}. ${name}`).join('\n');
-            const selectedClassIndex = prompt(`📚 Select class:\n${classOptions}\n\nEnter number (1-${classNames.length}):`);
-            
-            const classIndex = parseInt(selectedClassIndex) - 1;
-            if (isNaN(classIndex) || classIndex < 0 || classIndex >= classNames.length) {
-                alert('❌ Invalid class selection');
-                return;
-            }
-            
-            const selectedClassName = classNames[classIndex];
-            
-            // Add student to selected class
-            const newStudent = {
-                name: studentName.trim(),
-                id: studentId.trim(),
-                grades: {}
-            };
-            
-            classes[selectedClassName].students.push(newStudent);
-            
-            // Save updated data
-            localStorage.setItem('schoolPlatform_classRecords', JSON.stringify(classes));
-            
-            // Refresh dashboard
-            loadRealData();
-            
-            alert(`✅ Student "${studentName}" added to "${selectedClassName}"!\n\n💡 Visit Student Profiles to add detailed information like address and parent contacts.`);
+            // Redirect to student profiles page with auto-open modal
+            sessionStorage.setItem('openAddStudentModal', 'true');
+            window.location.href = 'students.html';
         }
 
         // Initialize

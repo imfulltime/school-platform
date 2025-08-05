@@ -264,15 +264,21 @@
         let supabaseEnabled = false;
         let schoolAPI = null;
 
-        // Try to load Supabase client
-        try {
-            // Import would go here when Supabase is set up
-            // import { schoolAPI as api } from './js/supabase-client.js';
-            // schoolAPI = api;
-            // supabaseEnabled = true;
-        } catch (error) {
-            console.log('Supabase not configured, using localStorage mode');
+        // Initialize Supabase client
+        async function initializeSupabase() {
+            try {
+                // Import Supabase client
+                const { schoolAPI: api } = await import('./js/supabase-client.js');
+                schoolAPI = api;
+                supabaseEnabled = true;
+                console.log('✅ Supabase client loaded successfully!');
+            } catch (error) {
+                console.log('⚠️ Supabase not configured, using localStorage mode:', error.message);
+            }
         }
+        
+        // Initialize on load
+        initializeSupabase();
 
         // Tab switching
         window.showLogin = function() {

@@ -430,7 +430,7 @@
         <div class="header-content">
             <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
             <h1>👤 Student Profiles</h1>
-            <div></div>
+            <a href="teacher-profile.html" class="back-btn">👨‍🏫 My Profile</a>
         </div>
     </header>
 
@@ -488,12 +488,21 @@
                         <h3>📋 Basic Information</h3>
                         <div class="info-grid">
                             <div class="info-item">
-                                <label class="info-label" for="studentName">Full Name *</label>
-                                <input type="text" id="studentName" class="info-input" required>
+                                <label class="info-label" for="firstName">First Name *</label>
+                                <input type="text" id="firstName" class="info-input" required>
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="lastName">Last Name *</label>
+                                <input type="text" id="lastName" class="info-input" required>
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="middleInitial">Middle Initial</label>
+                                <input type="text" id="middleInitial" class="info-input" maxlength="1" placeholder="M" style="text-transform: uppercase;">
                             </div>
                             <div class="info-item">
                                 <label class="info-label" for="studentId">Student ID *</label>
-                                <input type="text" id="studentId" class="info-input" required>
+                                <input type="text" id="studentId" class="info-input" required readonly style="background: #f8f9fa;">
+                                <small style="color: #666; font-size: 12px;">Auto-generated</small>
                             </div>
                             <div class="info-item">
                                 <label class="info-label" for="dateOfBirth">Date of Birth</label>
@@ -617,6 +626,10 @@
                                 <select id="primaryClass" class="info-input" required>
                                     <option value="">Select Class</option>
                                 </select>
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="section">Section</label>
+                                <input type="text" id="section" class="info-input" placeholder="e.g., A, B, 1, 2">
                             </div>
                             <div class="info-item">
                                 <label class="info-label" for="previousSchool">Previous School</label>
@@ -1022,6 +1035,12 @@
                                         <div class="info-value">${detailedProfile.gradeLevel}</div>
                                     </div>
                                 ` : ''}
+                                ${detailedProfile.section ? `
+                                    <div class="info-item">
+                                        <div class="info-label">Section</div>
+                                        <div class="info-value">${detailedProfile.section}</div>
+                                    </div>
+                                ` : ''}
                                 ${detailedProfile.enrollmentDate ? `
                                     <div class="info-item">
                                         <div class="info-label">Enrollment Date</div>
@@ -1254,6 +1273,14 @@
         // Initialize the system
         const profileSystem = new StudentProfileSystem();
 
+        // Check if we should auto-open the add student modal (from dashboard redirect)
+        window.addEventListener('load', function() {
+            if (sessionStorage.getItem('openAddStudentModal') === 'true') {
+                sessionStorage.removeItem('openAddStudentModal');
+                showAddStudentModal();
+            }
+        });
+
         // Global functions
         function openStudentProfile(name, id) {
             profileSystem.openStudentProfile(name, id);
@@ -1275,7 +1302,36 @@
         function showAddStudentModal() {
             // Populate class dropdown
             profileSystem.populateAddStudentClassFilter();
+            
+            // Generate next student ID
+            generateNextStudentId();
+            
             document.getElementById('addStudentModal').style.display = 'block';
+        }
+
+        // Generate next student ID automatically
+        function generateNextStudentId() {
+            const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
+            let highestId = -1;
+            
+            if (savedClassRecords) {
+                try {
+                    const classes = JSON.parse(savedClassRecords);
+                    Object.values(classes).forEach(classData => {
+                        classData.students.forEach(student => {
+                            const idNum = parseInt(student.id);
+                            if (!isNaN(idNum) && idNum > highestId) {
+                                highestId = idNum;
+                            }
+                        });
+                    });
+                } catch (e) {
+                    console.log('Error loading existing IDs:', e);
+                }
+            }
+            
+            const nextId = (highestId + 1).toString().padStart(2, '0');
+            document.getElementById('studentId').value = nextId;
         }
 
         function closeAddStudentModal() {
@@ -1287,9 +1343,18 @@
         document.getElementById('addStudentForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // Combine name fields
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const middleInitial = document.getElementById('middleInitial').value.trim();
+            const fullName = `${firstName} ${middleInitial ? middleInitial + '. ' : ''}${lastName}`;
+            
             const formData = {
                 // Basic Information
-                name: document.getElementById('studentName').value.trim(),
+                firstName: firstName,
+                lastName: lastName,
+                middleInitial: middleInitial,
+                name: fullName,
                 id: document.getElementById('studentId').value.trim(),
                 dateOfBirth: document.getElementById('dateOfBirth').value,
                 gender: document.getElementById('gender').value,
@@ -1317,6 +1382,7 @@
                 gradeLevel: document.getElementById('gradeLevel').value,
                 enrollmentDate: document.getElementById('enrollmentDate').value,
                 primaryClass: document.getElementById('primaryClass').value,
+                section: document.getElementById('section').value.trim(),
                 previousSchool: document.getElementById('previousSchool').value.trim(),
                 
                 // Additional Information
@@ -1329,8 +1395,8 @@
             };
 
             // Validation
-            if (!formData.name || !formData.id || !formData.primaryClass) {
-                alert('❌ Please fill in all required fields (Name, Student ID, and Primary Class)');
+            if (!firstName || !lastName || !formData.id || !formData.primaryClass) {
+                alert('❌ Please fill in all required fields (First Name, Last Name, Student ID, and Primary Class)');
                 return;
             }
 

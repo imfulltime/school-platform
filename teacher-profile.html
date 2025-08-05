@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Profile - School Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            line-height: 1.6;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+            text-decoration: none;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+        }
+        
+        /* Main Content */
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 30px;
+        }
+        
+        .profile-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        
+        .profile-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            margin: 0 auto 20px;
+        }
+        
+        .profile-name {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .profile-title {
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .profile-section {
+            margin-bottom: 30px;
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 10px;
+        }
+        
+        .profile-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+        
+        .info-value {
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        .info-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        .info-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .info-input:disabled {
+            background: #f8f9fa;
+            color: #666;
+        }
+        
+        .edit-btn, .save-btn, .cancel-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: opacity 0.3s;
+        }
+        
+        .edit-btn {
+            background: #667eea;
+            color: white;
+        }
+        
+        .save-btn {
+            background: #28a745;
+            color: white;
+        }
+        
+        .cancel-btn {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .edit-btn:hover, .save-btn:hover, .cancel-btn:hover {
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .welcome-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .create-profile-btn {
+            background: white;
+            color: #667eea;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .create-profile-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .profile-card {
+                padding: 25px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+            <h1>👨‍🏫 Teacher Profile</h1>
+            <div></div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Welcome Card (shown when no profile exists) -->
+        <div id="welcomeCard" class="welcome-card" style="display: none;">
+            <h2>📚 Welcome to Your Teacher Profile</h2>
+            <p>Create your professional teacher profile to manage your classroom information, contact details, and academic credentials.</p>
+            <button class="create-profile-btn" onclick="showCreateProfile()">Create My Profile</button>
+        </div>
+
+        <!-- Teacher Statistics -->
+        <div id="teacherStats" class="stats-grid" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-number" id="totalClasses">0</div>
+                <div class="stat-label">Classes Teaching</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalStudents">0</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="yearsExperience">0</div>
+                <div class="stat-label">Years Experience</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="averageGrade">N/A</div>
+                <div class="stat-label">Class Average</div>
+            </div>
+        </div>
+
+        <!-- Teacher Profile Card -->
+        <div id="profileCard" class="profile-card" style="display: none;">
+            <div class="profile-header">
+                <div class="profile-avatar" id="profileAvatar">T</div>
+                <div class="profile-name" id="displayName">Teacher Name</div>
+                <div class="profile-title" id="displayTitle">Subject Teacher</div>
+            </div>
+
+            <!-- Basic Information -->
+            <div class="profile-section">
+                <h3>📋 Basic Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">First Name</div>
+                        <input type="text" id="firstName" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Last Name</div>
+                        <input type="text" id="lastName" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Title/Position</div>
+                        <input type="text" id="title" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Employee ID</div>
+                        <input type="text" id="employeeId" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Department</div>
+                        <input type="text" id="department" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Date of Birth</div>
+                        <input type="date" id="dateOfBirth" class="info-input" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="profile-section">
+                <h3>📞 Contact Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Email Address</div>
+                        <input type="email" id="email" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Phone Number</div>
+                        <input type="tel" id="phoneNumber" class="info-input" disabled>
+                    </div>
+                    <div class="info-item" style="grid-column: 1 / -1;">
+                        <div class="info-label">Home Address</div>
+                        <textarea id="address" class="info-input" rows="3" disabled></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Professional Information -->
+            <div class="profile-section">
+                <h3>🎓 Professional Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Primary Subject</div>
+                        <input type="text" id="primarySubject" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Secondary Subjects</div>
+                        <input type="text" id="secondarySubjects" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Years of Experience</div>
+                        <input type="number" id="yearsOfExperience" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Hire Date</div>
+                        <input type="date" id="hireDate" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Education Level</div>
+                        <select id="educationLevel" class="info-input" disabled>
+                            <option value="">Select Level</option>
+                            <option value="Bachelor's">Bachelor's Degree</option>
+                            <option value="Master's">Master's Degree</option>
+                            <option value="Doctorate">Doctorate/PhD</option>
+                        </select>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Certifications</div>
+                        <input type="text" id="certifications" class="info-input" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div class="profile-section">
+                <h3>🚨 Emergency Contact</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Emergency Contact Name</div>
+                        <input type="text" id="emergencyName" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Relationship</div>
+                        <input type="text" id="emergencyRelation" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Emergency Phone</div>
+                        <input type="tel" id="emergencyPhone" class="info-input" disabled>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Alternative Phone</div>
+                        <input type="tel" id="emergencyAltPhone" class="info-input" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="profile-section">
+                <h3>📝 Additional Information</h3>
+                <div class="info-grid">
+                    <div class="info-item" style="grid-column: 1 / -1;">
+                        <div class="info-label">Bio/About Me</div>
+                        <textarea id="bio" class="info-input" rows="4" disabled placeholder="Tell students and parents about yourself..."></textarea>
+                    </div>
+                    <div class="info-item" style="grid-column: 1 / -1;">
+                        <div class="info-label">Teaching Philosophy</div>
+                        <textarea id="teachingPhilosophy" class="info-input" rows="4" disabled placeholder="Describe your approach to teaching..."></textarea>
+                    </div>
+                    <div class="info-item" style="grid-column: 1 / -1;">
+                        <div class="info-label">Additional Notes</div>
+                        <textarea id="notes" class="info-input" rows="3" disabled placeholder="Any additional information..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <button id="editBtn" class="edit-btn" onclick="toggleEdit()">✏️ Edit Profile</button>
+                <button id="saveBtn" class="save-btn" onclick="saveProfile()" style="display: none;">💾 Save Changes</button>
+                <button id="cancelBtn" class="cancel-btn" onclick="cancelEdit()" style="display: none;">❌ Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TeacherProfileManager {
+            constructor() {
+                this.isEditing = false;
+                this.originalData = {};
+                this.init();
+            }
+
+            init() {
+                this.loadProfile();
+                this.updateStats();
+            }
+
+            loadProfile() {
+                const savedProfile = localStorage.getItem('schoolPlatform_teacherProfile');
+                
+                if (savedProfile) {
+                    try {
+                        const profile = JSON.parse(savedProfile);
+                        this.displayProfile(profile);
+                        document.getElementById('welcomeCard').style.display = 'none';
+                        document.getElementById('profileCard').style.display = 'block';
+                        document.getElementById('teacherStats').style.display = 'grid';
+                    } catch (e) {
+                        console.log('Error loading teacher profile:', e);
+                        this.showWelcome();
+                    }
+                } else {
+                    this.showWelcome();
+                }
+            }
+
+            showWelcome() {
+                document.getElementById('welcomeCard').style.display = 'block';
+                document.getElementById('profileCard').style.display = 'none';
+                document.getElementById('teacherStats').style.display = 'none';
+            }
+
+            displayProfile(profile) {
+                // Update header
+                const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+                document.getElementById('displayName').textContent = fullName || 'Teacher Name';
+                document.getElementById('displayTitle').textContent = profile.title || 'Subject Teacher';
+                document.getElementById('profileAvatar').textContent = (profile.firstName || 'T').charAt(0);
+
+                // Populate form fields
+                Object.keys(profile).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.value = profile[key] || '';
+                    }
+                });
+            }
+
+            updateStats() {
+                // Calculate statistics from existing data
+                const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
+                let totalClasses = 0;
+                let totalStudents = 0;
+                let totalGrades = 0;
+                let gradeSum = 0;
+
+                if (savedClassRecords) {
+                    try {
+                        const classes = JSON.parse(savedClassRecords);
+                        totalClasses = Object.keys(classes).length;
+                        
+                        Object.values(classes).forEach(classData => {
+                            totalStudents += classData.students.length;
+                            
+                            classData.students.forEach(student => {
+                                const studentGrades = Object.values(student.grades || {});
+                                totalGrades += studentGrades.length;
+                                gradeSum += studentGrades.reduce((sum, grade) => sum + grade, 0);
+                            });
+                        });
+                    } catch (e) {
+                        console.log('Error loading class data:', e);
+                    }
+                }
+
+                // Update statistics display
+                document.getElementById('totalClasses').textContent = totalClasses;
+                document.getElementById('totalStudents').textContent = totalStudents;
+                
+                const averageGrade = totalGrades > 0 ? Math.round(gradeSum / totalGrades) : 0;
+                document.getElementById('averageGrade').textContent = averageGrade > 0 ? averageGrade + '%' : 'N/A';
+
+                // Get years of experience from profile
+                const savedProfile = localStorage.getItem('schoolPlatform_teacherProfile');
+                if (savedProfile) {
+                    try {
+                        const profile = JSON.parse(savedProfile);
+                        document.getElementById('yearsExperience').textContent = profile.yearsOfExperience || 0;
+                    } catch (e) {
+                        document.getElementById('yearsExperience').textContent = 0;
+                    }
+                }
+            }
+
+            toggleEdit() {
+                this.isEditing = !this.isEditing;
+                
+                // Store original data for cancel functionality
+                if (this.isEditing) {
+                    this.originalData = this.getCurrentFormData();
+                }
+
+                // Toggle input states
+                const inputs = document.querySelectorAll('.info-input');
+                inputs.forEach(input => {
+                    input.disabled = !this.isEditing;
+                });
+
+                // Toggle buttons
+                document.getElementById('editBtn').style.display = this.isEditing ? 'none' : 'inline-block';
+                document.getElementById('saveBtn').style.display = this.isEditing ? 'inline-block' : 'none';
+                document.getElementById('cancelBtn').style.display = this.isEditing ? 'inline-block' : 'none';
+            }
+
+            getCurrentFormData() {
+                const formData = {};
+                const inputs = document.querySelectorAll('.info-input');
+                
+                inputs.forEach(input => {
+                    if (input.id) {
+                        formData[input.id] = input.value;
+                    }
+                });
+
+                return formData;
+            }
+
+            saveProfile() {
+                const formData = this.getCurrentFormData();
+                
+                // Validation
+                if (!formData.firstName || !formData.lastName) {
+                    alert('❌ Please fill in your first and last name.');
+                    return;
+                }
+
+                // Add system fields
+                formData.lastUpdated = new Date().toISOString();
+                
+                // Save to localStorage
+                localStorage.setItem('schoolPlatform_teacherProfile', JSON.stringify(formData));
+                
+                // Update display
+                this.displayProfile(formData);
+                this.updateStats();
+                
+                // Exit edit mode
+                this.toggleEdit();
+                
+                alert('✅ Teacher profile saved successfully!');
+            }
+
+            cancelEdit() {
+                // Restore original data
+                Object.keys(this.originalData).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.value = this.originalData[key] || '';
+                    }
+                });
+
+                // Exit edit mode
+                this.toggleEdit();
+            }
+
+            createProfile() {
+                // Generate default employee ID
+                const now = new Date();
+                const defaultEmployeeId = 'TCH' + now.getFullYear().toString().substr(-2) + 
+                    String(now.getMonth() + 1).padStart(2, '0') + 
+                    String(Math.floor(Math.random() * 100)).padStart(2, '0');
+
+                const newProfile = {
+                    firstName: '',
+                    lastName: '',
+                    title: '',
+                    employeeId: defaultEmployeeId,
+                    department: '',
+                    dateOfBirth: '',
+                    email: '',
+                    phoneNumber: '',
+                    address: '',
+                    primarySubject: '',
+                    secondarySubjects: '',
+                    yearsOfExperience: '',
+                    hireDate: '',
+                    educationLevel: '',
+                    certifications: '',
+                    emergencyName: '',
+                    emergencyRelation: '',
+                    emergencyPhone: '',
+                    emergencyAltPhone: '',
+                    bio: '',
+                    teachingPhilosophy: '',
+                    notes: '',
+                    dateCreated: new Date().toISOString()
+                };
+
+                // Save initial profile
+                localStorage.setItem('schoolPlatform_teacherProfile', JSON.stringify(newProfile));
+                
+                // Display profile and enter edit mode
+                this.displayProfile(newProfile);
+                document.getElementById('welcomeCard').style.display = 'none';
+                document.getElementById('profileCard').style.display = 'block';
+                document.getElementById('teacherStats').style.display = 'grid';
+                
+                // Automatically enter edit mode
+                this.toggleEdit();
+            }
+        }
+
+        // Initialize the teacher profile manager
+        const profileManager = new TeacherProfileManager();
+
+        // Global functions
+        function showCreateProfile() {
+            profileManager.createProfile();
+        }
+
+        function toggleEdit() {
+            profileManager.toggleEdit();
+        }
+
+        function saveProfile() {
+            profileManager.saveProfile();
+        }
+
+        function cancelEdit() {
+            profileManager.cancelEdit();
+        }
+    </script>
+</body>
+</html>
