@@ -256,6 +256,9 @@
         <div class="welcome">
             <h1>Good Morning, Ms. Johnson! 🌅</h1>
             <p>Ready to make today a great learning day? Here's your classroom overview.</p>
+            <div id="dataStatus" style="margin-top: 15px; padding: 10px; border-radius: 8px; background: #e8f5e8; color: #2d5a2d; font-size: 14px; display: none;">
+                💾 Your data is automatically saved and will persist between sessions
+            </div>
         </div>
 
         <!-- Quick Stats -->
@@ -327,6 +330,17 @@
                 </div>
                 <button class="action-btn">View Reports</button>
             </div>
+
+            <div class="action-card" style="background: #fff5f5; border: 2px dashed #ffa8a8;" onclick="manageData()">
+                <div class="action-header">
+                    <div class="action-icon" style="background: #ff6b6b;">🗂️</div>
+                    <div class="action-title">Data Management</div>
+                </div>
+                <div class="action-description">
+                    Export your data or reset the system for testing purposes.
+                </div>
+                <button class="action-btn" style="background: #ff6b6b;">Manage Data</button>
+            </div>
         </div>
 
         <!-- Recent Activity -->
@@ -355,6 +369,57 @@
     </div>
 
     <script>
+        // Load and display real data from localStorage
+        function loadRealData() {
+            const savedStudents = localStorage.getItem('schoolPlatform_students');
+            const savedGrades = localStorage.getItem('schoolPlatform_grades');
+            
+            let totalStudents = 0;
+            let presentToday = 0;
+            let totalGrades = 0;
+            let gradeSum = 0;
+            
+            // Count attendance data
+            if (savedStudents) {
+                try {
+                    const students = JSON.parse(savedStudents);
+                    Object.values(students).forEach(classStudents => {
+                        totalStudents += classStudents.length;
+                        presentToday += classStudents.filter(s => s.status === 'present').length;
+                    });
+                } catch (e) {
+                    console.log('Error loading student data:', e);
+                }
+            }
+            
+            // Count grade data
+            if (savedGrades) {
+                try {
+                    const gradeStudents = JSON.parse(savedGrades);
+                    gradeStudents.forEach(student => {
+                        totalGrades += student.grades.length;
+                        gradeSum += student.grades.reduce((sum, grade) => sum + grade.score, 0);
+                    });
+                } catch (e) {
+                    console.log('Error loading grade data:', e);
+                }
+            }
+            
+            // Update dashboard stats with real data
+            const classAverage = totalGrades > 0 ? Math.round(gradeSum / totalGrades) : 85;
+            
+            // Use real data if available, otherwise use defaults
+            document.querySelector('.stat-card:nth-child(1) .stat-number').textContent = totalStudents || 28;
+            document.querySelector('.stat-card:nth-child(2) .stat-number').textContent = presentToday || 26;
+            document.querySelector('.stat-card:nth-child(3) .stat-number').textContent = totalGrades || 15;
+            document.querySelector('.stat-card:nth-child(4) .stat-number').textContent = classAverage + '%';
+            
+            // Show data status if we have saved data
+            if (savedStudents || savedGrades) {
+                document.getElementById('dataStatus').style.display = 'block';
+            }
+        }
+
         // Update greeting based on time of day
         function updateGreeting() {
             const hour = new Date().getHours();
@@ -366,7 +431,7 @@
             } else if (hour < 17) {
                 welcomeElement.textContent = `Good Afternoon, ${name}! ☀️`;
             } else {
-                welcomeElement.textContent = `Good Evening, ${name}! 🌅`;
+                welcomeElement.textContent = `Good Evening, ${name}! 🌇`;
             }
         }
 
@@ -387,6 +452,55 @@
             alert('Opening Reports Dashboard...\n\nIn the next step, we\'ll build this feature!');
         }
 
+        function manageData() {
+            const choice = confirm('Data Management Options:\n\n' +
+                'Click OK to EXPORT your data (download as JSON)\n' +
+                'Click Cancel to CLEAR all data (for testing)');
+            
+            if (choice) {
+                // Export data
+                exportData();
+            } else {
+                // Clear data
+                if (confirm('⚠️ This will permanently delete all attendance and grade data!\n\nAre you sure?')) {
+                    clearAllData();
+                }
+            }
+        }
+
+        function exportData() {
+            const data = {
+                students: localStorage.getItem('schoolPlatform_students'),
+                grades: localStorage.getItem('schoolPlatform_grades'),
+                attendance: localStorage.getItem('schoolPlatform_attendance'),
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `school-platform-data-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('✅ Data exported successfully!');
+        }
+
+        function clearAllData() {
+            localStorage.removeItem('schoolPlatform_students');
+            localStorage.removeItem('schoolPlatform_grades');
+            localStorage.removeItem('schoolPlatform_attendance');
+            
+            // Refresh dashboard
+            loadRealData();
+            document.getElementById('dataStatus').style.display = 'none';
+            
+            alert('🗑️ All data cleared! The system is reset for testing.');
+        }
+
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
                 window.location.href = 'login.html';
@@ -395,6 +509,7 @@
 
         // Initialize
         updateGreeting();
+        loadRealData();
         
         // Update stats with some animation
         function animateStats() {

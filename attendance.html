@@ -408,7 +408,46 @@
         // Initialize the page
         function init() {
             setCurrentDate();
+            loadSavedData();
             loadClass();
+        }
+
+        // Load saved data from localStorage
+        function loadSavedData() {
+            const savedStudents = localStorage.getItem('schoolPlatform_students');
+            const savedAttendance = localStorage.getItem('schoolPlatform_attendance');
+            
+            if (savedStudents) {
+                try {
+                    const parsedStudents = JSON.parse(savedStudents);
+                    // Merge saved data with default data
+                    Object.keys(parsedStudents).forEach(classKey => {
+                        if (students[classKey]) {
+                            students[classKey] = parsedStudents[classKey];
+                        }
+                    });
+                } catch (e) {
+                    console.log('Error loading saved student data:', e);
+                }
+            }
+            
+            if (savedAttendance) {
+                try {
+                    attendanceData = JSON.parse(savedAttendance);
+                } catch (e) {
+                    console.log('Error loading saved attendance data:', e);
+                }
+            }
+        }
+
+        // Save data to localStorage
+        function saveDataToStorage() {
+            try {
+                localStorage.setItem('schoolPlatform_students', JSON.stringify(students));
+                localStorage.setItem('schoolPlatform_attendance', JSON.stringify(attendanceData));
+            } catch (e) {
+                console.log('Error saving data to localStorage:', e);
+            }
         }
 
         // Set current date
@@ -482,6 +521,7 @@
                 student.status = student.status === status ? null : status;
                 displayStudents();
                 updateStats();
+                saveDataToStorage(); // Auto-save when status changes
             }
         }
 
@@ -506,6 +546,7 @@
             });
             displayStudents();
             updateStats();
+            saveDataToStorage(); // Auto-save bulk changes
         }
 
         function markAllAbsent() {
@@ -514,6 +555,7 @@
             });
             displayStudents();
             updateStats();
+            saveDataToStorage(); // Auto-save bulk changes
         }
 
         function clearAll() {
@@ -522,6 +564,7 @@
             });
             displayStudents();
             updateStats();
+            saveDataToStorage(); // Auto-save bulk changes
         }
 
         // Save attendance
@@ -529,7 +572,7 @@
             const saveStatus = document.getElementById('saveStatus');
             const today = new Date().toISOString().split('T')[0];
             
-            // In a real app, you would send this data to your server
+            // Save daily attendance record
             attendanceData[currentClass] = {
                 date: today,
                 students: students[currentClass].map(s => ({
@@ -540,10 +583,13 @@
                 }))
             };
 
+            // Save to localStorage
+            saveDataToStorage();
+
             // Show success message
             saveStatus.className = 'save-status success';
             saveStatus.style.display = 'block';
-            saveStatus.textContent = '✅ Attendance saved successfully!';
+            saveStatus.textContent = '✅ Attendance saved successfully! Data persists between sessions.';
 
             // Hide message after 3 seconds
             setTimeout(() => {

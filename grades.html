@@ -379,11 +379,34 @@
             }
 
             init() {
+                this.loadSavedData();
                 document.getElementById('studentForm').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.addStudent();
                 });
                 this.updateDisplay();
+            }
+
+            // Load saved data from localStorage
+            loadSavedData() {
+                const savedGrades = localStorage.getItem('schoolPlatform_grades');
+                if (savedGrades) {
+                    try {
+                        this.students = JSON.parse(savedGrades);
+                    } catch (e) {
+                        console.log('Error loading saved grade data:', e);
+                        this.students = [];
+                    }
+                }
+            }
+
+            // Save data to localStorage
+            saveDataToStorage() {
+                try {
+                    localStorage.setItem('schoolPlatform_grades', JSON.stringify(this.students));
+                } catch (e) {
+                    console.log('Error saving grade data to localStorage:', e);
+                }
             }
 
             addStudent() {
@@ -413,6 +436,7 @@
                 this.students.push(student);
                 this.updateDisplay();
                 this.clearForm();
+                this.saveDataToStorage(); // Auto-save when student added
                 this.showSuccessMessage(`Student ${name} added successfully!`);
             }
 
@@ -425,6 +449,7 @@
                         date: new Date().toLocaleDateString()
                     });
                     this.updateDisplay();
+                    this.saveDataToStorage(); // Auto-save when grade added
                     return true;
                 }
                 return false;
@@ -434,6 +459,7 @@
                 if (confirm('Are you sure you want to remove this student?')) {
                     this.students = this.students.filter(s => s.id !== studentId);
                     this.updateDisplay();
+                    this.saveDataToStorage(); // Auto-save when student removed
                 }
             }
 
