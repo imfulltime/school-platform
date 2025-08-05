@@ -4,9 +4,10 @@
   "description": "Modern classroom management system with online backend integration",
   "type": "module",
   "scripts": {
-    "dev": "python -m http.server 8000",
-    "build": "echo 'Building for production...'",
-    "setup-supabase": "npm install @supabase/supabase-js"
+    "dev": "python3 -m http.server 8000",
+    "build": "echo 'Static site - no build required'",
+    "setup-supabase": "npm install @supabase/supabase-js",
+    "start": "python3 -m http.server 8000"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.53.0"
