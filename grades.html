@@ -409,14 +409,33 @@
         <div id="createClassForm" class="create-class-form fade-in" style="display: none;">
             <h3>Create New Class</h3>
             <form id="newClassForm">
-                <div style="display: flex; gap: 15px; align-items: end;">
-                    <div class="form-group" style="flex: 1;">
+                <div style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; min-width: 200px;">
                         <label for="className">Class Name:</label>
-                        <input type="text" id="className" placeholder="e.g., Math 101, English 9A" required>
+                        <input type="text" id="className" placeholder="e.g., Math, English, Science" required>
                     </div>
-                    <div class="form-group" style="flex: 1;">
+                    <div class="form-group" style="flex: 0.8; min-width: 120px;">
+                        <label for="classYear">Year:</label>
+                        <select id="classYear" required>
+                            <option value="">Select Year</option>
+                            <option value="K">Kindergarten</option>
+                            <option value="1">1st Grade</option>
+                            <option value="2">2nd Grade</option>
+                            <option value="3">3rd Grade</option>
+                            <option value="4">4th Grade</option>
+                            <option value="5">5th Grade</option>
+                            <option value="6">6th Grade</option>
+                            <option value="7">7th Grade</option>
+                            <option value="8">8th Grade</option>
+                            <option value="9">9th Grade</option>
+                            <option value="10">10th Grade</option>
+                            <option value="11">11th Grade</option>
+                            <option value="12">12th Grade</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 0.8; min-width: 120px;">
                         <label for="classSection">Section:</label>
-                        <input type="text" id="classSection" placeholder="e.g., Period 1, Room 205" required>
+                        <input type="text" id="classSection" placeholder="e.g., A, B, 1, 2" required>
                     </div>
                     <button type="submit" class="btn">Create Class</button>
                     <button type="button" class="btn btn-danger" onclick="hideCreateClassForm()">Cancel</button>
@@ -437,17 +456,54 @@
                 <div class="class-management">
                     <div class="card fade-in">
                         <h2>Add Student to Class</h2>
-                        <form id="studentForm">
-                            <div class="form-group">
-                                <label for="studentName">Student Name:</label>
-                                <input type="text" id="studentName" required>
+                        
+                        <!-- Selection Method -->
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label>Choose Method:</label>
+                            <div style="margin-top: 10px;">
+                                <label style="display: inline-flex; align-items: center; margin-right: 20px;">
+                                    <input type="radio" name="addMethod" value="existing" id="existingMethod" onchange="toggleAddStudentMethod()" style="margin-right: 8px;">
+                                    Select from Unassigned Students
+                                </label>
+                                <label style="display: inline-flex; align-items: center;">
+                                    <input type="radio" name="addMethod" value="manual" id="manualMethod" checked onchange="toggleAddStudentMethod()" style="margin-right: 8px;">
+                                    Manually Add New Student
+                                </label>
                             </div>
+                        </div>
+
+                        <!-- Existing Students Selection -->
+                        <div id="existingStudentForm" style="display: none;">
                             <div class="form-group">
-                                <label for="studentId">Student ID:</label>
-                                <input type="text" id="studentId" required>
+                                <label for="unassignedStudents">Select Unassigned Student:</label>
+                                <select id="unassignedStudents" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                    <option value="">Choose a student...</option>
+                                </select>
+                                <small style="color: #666; display: block; margin-top: 5px;">
+                                    Students who haven't been assigned to any class yet
+                                </small>
                             </div>
-                            <button type="submit" class="btn">Add Student</button>
-                        </form>
+                            <button type="button" class="btn" onclick="addExistingStudent()">Add Selected Student</button>
+                        </div>
+
+                        <!-- Manual Student Entry -->
+                        <div id="manualStudentForm">
+                            <form id="studentForm">
+                                <div class="form-group">
+                                    <label for="studentName">Student Name:</label>
+                                    <input type="text" id="studentName">
+                                </div>
+                                <div class="form-group">
+                                    <label for="studentId">Student ID:</label>
+                                    <input type="text" id="studentId">
+                                </div>
+                                <button type="submit" class="btn">Add New Student</button>
+                            </form>
+                            <div style="margin-top: 15px; padding: 15px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #2196F3;">
+                                <strong>💡 Tip:</strong> For complete student records with parent contacts and detailed information, 
+                                <a href="students.html" style="color: #2196F3; text-decoration: none;">create student profiles first</a>.
+                            </div>
+                        </div>
                     </div>
 
                     <div class="card fade-in">
@@ -542,22 +598,24 @@
 
             createClass() {
                 const className = document.getElementById('className').value.trim();
+                const classYear = document.getElementById('classYear').value.trim();
                 const classSection = document.getElementById('classSection').value.trim();
 
-                if (!className || !classSection) {
-                    alert('Please fill in all fields');
+                if (!className || !classYear || !classSection) {
+                    alert('Please fill in all fields (Class Name, Year, and Section)');
                     return;
                 }
 
-                const classId = `${className} - ${classSection}`;
+                const classId = `${className} - Year ${classYear} - Section ${classSection}`;
                 
                 if (this.classes[classId]) {
-                    alert('A class with this name and section already exists');
+                    alert('A class with this name, year, and section already exists');
                     return;
                 }
 
                 this.classes[classId] = {
                     name: className,
+                    year: classYear,
                     section: classSection,
                     students: [],
                     assignments: [],
@@ -590,9 +648,10 @@
 
                 const currentClassData = this.classes[this.currentClass];
                 
-                // Check for duplicate student ID in this class
-                if (currentClassData.students.find(student => student.id === id)) {
-                    alert('Student ID already exists in this class');
+                // Check for duplicate student ID across all classes
+                const allStudentIds = this.getAllStudentIds();
+                if (allStudentIds.includes(id)) {
+                    alert('Student ID already exists in the system. Each student must have a unique ID.');
                     return;
                 }
 
@@ -611,6 +670,115 @@
                 this.showSuccessMessage(`Student ${name} added to ${this.currentClass}`);
             }
 
+            addExistingStudent() {
+                if (!this.currentClass) {
+                    alert('Please select a class first');
+                    return;
+                }
+
+                const selectedStudentId = document.getElementById('unassignedStudents').value;
+                if (!selectedStudentId) {
+                    alert('Please select a student from the list');
+                    return;
+                }
+
+                // Get student details from student profiles
+                const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles') || '{}';
+                let studentProfile = null;
+
+                try {
+                    const profiles = JSON.parse(savedProfiles);
+                    studentProfile = profiles[selectedStudentId];
+                } catch (e) {
+                    console.log('Error loading student profile:', e);
+                    alert('Error loading student profile');
+                    return;
+                }
+
+                if (!studentProfile) {
+                    alert('Student profile not found');
+                    return;
+                }
+
+                const currentClassData = this.classes[this.currentClass];
+                
+                // Check if student is already in this class
+                if (currentClassData.students.find(student => student.id === selectedStudentId)) {
+                    alert('Student is already in this class');
+                    return;
+                }
+
+                const student = {
+                    name: studentProfile.name,
+                    id: studentProfile.id,
+                    grades: {},
+                    createdAt: new Date().toLocaleDateString()
+                };
+
+                currentClassData.students.push(student);
+                this.saveDataToStorage();
+                this.renderClassRecord();
+                this.updateStatistics();
+                this.loadUnassignedStudents(); // Refresh the unassigned students list
+                document.getElementById('unassignedStudents').value = ''; // Clear selection
+                this.showSuccessMessage(`Student ${studentProfile.name} added to ${this.currentClass}`);
+            }
+
+            getAllStudentIds() {
+                const allIds = [];
+                Object.values(this.classes).forEach(classData => {
+                    classData.students.forEach(student => {
+                        allIds.push(student.id);
+                    });
+                });
+                return allIds;
+            }
+
+            loadUnassignedStudents() {
+                const unassignedSelect = document.getElementById('unassignedStudents');
+                if (!unassignedSelect) return;
+
+                // Get all student profiles
+                const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles') || '{}';
+                let studentProfiles = {};
+
+                try {
+                    studentProfiles = JSON.parse(savedProfiles);
+                } catch (e) {
+                    console.log('Error loading student profiles:', e);
+                }
+
+                // Get all assigned student IDs
+                const assignedIds = this.getAllStudentIds();
+
+                // Find unassigned students
+                const unassignedStudents = [];
+                Object.values(studentProfiles).forEach(profile => {
+                    if (!assignedIds.includes(profile.id)) {
+                        unassignedStudents.push(profile);
+                    }
+                });
+
+                // Populate dropdown
+                unassignedSelect.innerHTML = '<option value="">Choose a student...</option>';
+                unassignedStudents.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.id;
+                    option.textContent = `${student.name} (ID: ${student.id})`;
+                    unassignedSelect.appendChild(option);
+                });
+
+                // Show count
+                const countText = unassignedStudents.length > 0 
+                    ? `${unassignedStudents.length} unassigned students available`
+                    : 'No unassigned students found. Create student profiles first.';
+                
+                const existingSmall = unassignedSelect.parentNode.querySelector('small');
+                if (existingSmall) {
+                    existingSmall.textContent = countText;
+                }
+            }
+
             populateClassSelector() {
                 const selector = document.getElementById('classSelect');
                 selector.innerHTML = '<option value="">Choose a class...</option>';
@@ -626,6 +794,9 @@
             loadClass() {
                 const classId = document.getElementById('classSelect').value;
                 this.currentClass = classId;
+                
+                // Load unassigned students when a class is selected
+                this.loadUnassignedStudents();
 
                 if (!classId) {
                     document.getElementById('noClassView').style.display = 'block';
@@ -892,6 +1063,25 @@
 
         function hideCreateClassForm() {
             classSystem.hideCreateClassForm();
+        }
+
+        function toggleAddStudentMethod() {
+            const existingMethod = document.getElementById('existingMethod').checked;
+            const existingForm = document.getElementById('existingStudentForm');
+            const manualForm = document.getElementById('manualStudentForm');
+
+            if (existingMethod) {
+                existingForm.style.display = 'block';
+                manualForm.style.display = 'none';
+                classSystem.loadUnassignedStudents();
+            } else {
+                existingForm.style.display = 'none';
+                manualForm.style.display = 'block';
+            }
+        }
+
+        function addExistingStudent() {
+            classSystem.addExistingStudent();
         }
 
         function addAssignmentColumn() {

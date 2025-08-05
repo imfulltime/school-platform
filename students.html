@@ -618,6 +618,16 @@
                                 </select>
                             </div>
                             <div class="info-item">
+                                <label class="info-label" for="academicYear">Academic Year</label>
+                                <select id="academicYear" class="info-input">
+                                    <option value="">Select Year</option>
+                                    <option value="2023-2024">2023-2024</option>
+                                    <option value="2024-2025">2024-2025</option>
+                                    <option value="2025-2026">2025-2026</option>
+                                    <option value="2026-2027">2026-2027</option>
+                                </select>
+                            </div>
+                            <div class="info-item">
                                 <label class="info-label" for="enrollmentDate">Enrollment Date</label>
                                 <input type="date" id="enrollmentDate" class="info-input">
                             </div>
@@ -1024,7 +1034,7 @@
                     </div>`;
 
                 // Academic Information if available
-                if (detailedProfile && (detailedProfile.gradeLevel || detailedProfile.enrollmentDate || detailedProfile.previousSchool)) {
+                if (detailedProfile && (detailedProfile.gradeLevel || detailedProfile.academicYear || detailedProfile.enrollmentDate || detailedProfile.previousSchool)) {
                     profileHTML += `
                         <div class="profile-section">
                             <h3>🎓 Academic Information</h3>
@@ -1033,6 +1043,12 @@
                                     <div class="info-item">
                                         <div class="info-label">Grade Level</div>
                                         <div class="info-value">${detailedProfile.gradeLevel}</div>
+                                    </div>
+                                ` : ''}
+                                ${detailedProfile.academicYear ? `
+                                    <div class="info-item">
+                                        <div class="info-label">Academic Year</div>
+                                        <div class="info-value">${detailedProfile.academicYear}</div>
                                     </div>
                                 ` : ''}
                                 ${detailedProfile.section ? `
@@ -1380,6 +1396,7 @@
                 
                 // Academic Information
                 gradeLevel: document.getElementById('gradeLevel').value,
+                academicYear: document.getElementById('academicYear').value,
                 enrollmentDate: document.getElementById('enrollmentDate').value,
                 primaryClass: document.getElementById('primaryClass').value,
                 section: document.getElementById('section').value.trim(),
