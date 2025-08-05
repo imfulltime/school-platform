@@ -470,16 +470,27 @@
 
         // Update greeting based on time of day
         function updateGreeting() {
-            // Get teacher name from profile
-            const savedProfile = localStorage.getItem('schoolPlatform_teacherProfile');
             let teacherName = 'Teacher';
             
-            if (savedProfile) {
+            // First try to get authenticated user data
+            const currentUser = sessionStorage.getItem('currentUser');
+            if (currentUser) {
                 try {
-                    const profile = JSON.parse(savedProfile);
-                    teacherName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Teacher';
+                    const user = JSON.parse(currentUser);
+                    teacherName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Teacher';
                 } catch (e) {
-                    console.log('Error loading teacher name:', e);
+                    console.log('Error loading user data:', e);
+                }
+            } else {
+                // Fallback to teacher profile
+                const savedProfile = localStorage.getItem('schoolPlatform_teacherProfile');
+                if (savedProfile) {
+                    try {
+                        const profile = JSON.parse(savedProfile);
+                        teacherName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Teacher';
+                    } catch (e) {
+                        console.log('Error loading teacher name:', e);
+                    }
                 }
             }
             
@@ -568,9 +579,44 @@
             alert('🗑️ All data cleared! The system is reset for testing.');
         }
 
-        function logout() {
+        async function logout() {
             if (confirm('Are you sure you want to logout?')) {
-                window.location.href = 'login.html';
+                // Try to sign out from Supabase if available
+                try {
+                    if (window.supabaseClient) {
+                        await window.supabaseClient.auth.signOut();
+                    }
+                } catch (error) {
+                    console.log('Error signing out:', error);
+                }
+                
+                // Clear session data
+                sessionStorage.removeItem('currentUser');
+                localStorage.removeItem('userSession');
+                
+                // Redirect to auth page
+                window.location.href = 'auth.html';
+            }
+        }
+
+        // Check authentication on page load
+        function checkAuthentication() {
+            const currentUser = sessionStorage.getItem('currentUser');
+            if (!currentUser) {
+                // No authenticated user, redirect to auth
+                window.location.href = 'auth.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Load Supabase client for logout functionality
+        async function loadSupabaseClient() {
+            try {
+                const { supabase } = await import('./js/supabase-client.js');
+                window.supabaseClient = supabase;
+            } catch (error) {
+                console.log('Supabase not configured, using localStorage mode');
             }
         }
 
@@ -667,8 +713,19 @@
         }
 
         // Initialize
-        updateGreeting();
-        loadRealData();
+        window.addEventListener('load', async () => {
+            // Check authentication first
+            if (!checkAuthentication()) {
+                return;
+            }
+            
+            // Load Supabase client
+            await loadSupabaseClient();
+            
+            // Initialize dashboard
+            updateGreeting();
+            loadRealData();
+        });
         
         // Update stats with some animation
         function animateStats() {

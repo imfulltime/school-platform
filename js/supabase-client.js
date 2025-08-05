@@ -5,7 +5,13 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = 'https://dbztnbqtkhenfjhaughw.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRienRuYnF0a2hlbmZqaGF1Z2h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzODc1NzMsImV4cCI6MjA2OTk2MzU3M30.trRjc2khddlb1RXR1CXeONhlEIYlJBlZ0lncvH5RJFs'
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+})
 
 // Data Access Layer - wraps Supabase calls
 export class SchoolPlatformAPI {
@@ -229,68 +235,161 @@ export class SchoolPlatformAPI {
       .subscribe()
   }
 
-  // Data Migration from localStorage
-  async migrateLocalData() {
-    try {
-      // Get existing localStorage data
-      const classRecords = JSON.parse(localStorage.getItem('schoolPlatform_classRecords') || '{}')
-      const attendanceData = JSON.parse(localStorage.getItem('schoolPlatform_attendance') || '{}')
+              // Enhanced data migration with backend storage
+            async migrateLocalData() {
+                try {
+                    const user = await this.getCurrentUser()
+                    if (!user) throw new Error('User not authenticated')
 
-      // Migrate classes and students
-      for (const [className, classData] of Object.entries(classRecords)) {
-        // Create class
-        const newClass = await this.createClass(classData.name, classData.section)
-        
-        // Add students and their grades
-        for (const student of classData.students) {
-          const newStudent = await this.addStudent(newClass.id, student.name, student.id)
-          
-          if (Object.keys(student.grades).length > 0) {
-            await this.updateStudentGrades(newStudent.id, student.grades)
-          }
-        }
+                    console.log('🔄 Starting data migration...')
+                    
+                    // Get all localStorage data
+                    const allLocalData = {
+                        classRecords: JSON.parse(localStorage.getItem('schoolPlatform_classRecords') || '{}'),
+                        studentProfiles: JSON.parse(localStorage.getItem('schoolPlatform_studentProfiles') || '{}'),
+                        teacherProfile: JSON.parse(localStorage.getItem('schoolPlatform_teacherProfile') || '{}'),
+                        attendanceData: JSON.parse(localStorage.getItem('schoolPlatform_attendance') || '{}'),
+                        grades: JSON.parse(localStorage.getItem('schoolPlatform_grades') || '{}')
+                    }
 
-        // Update assignments
-        if (classData.assignments && classData.assignments.length > 0) {
-          await this.updateClassAssignments(newClass.id, classData.assignments)
-        }
-      }
+                    // Store complete data in user_data table for backup
+                    const { error: backupError } = await supabase
+                        .from('user_data')
+                        .upsert({
+                            user_id: user.id,
+                            data: {
+                                ...allLocalData,
+                                migrated_at: new Date().toISOString(),
+                                migration_source: 'localStorage'
+                            },
+                            updated_at: new Date().toISOString()
+                        })
 
-      // Migrate attendance
-      for (const [className, attendanceClass] of Object.entries(attendanceData)) {
-        if (attendanceClass.students) {
-          const date = attendanceClass.date || new Date().toISOString().split('T')[0]
-          
-          // Find corresponding class
-          const classes = await this.getClasses()
-          const matchingClass = classes.find(c => `${c.name} - ${c.section}` === className)
-          
-          if (matchingClass) {
-            for (const attendanceRecord of attendanceClass.students) {
-              // Find corresponding student
-              const students = await this.getStudentsInClass(matchingClass.id)
-              const matchingStudent = students.find(s => s.student_id === attendanceRecord.studentId)
-              
-              if (matchingStudent && attendanceRecord.status) {
-                await this.recordAttendance(
-                  matchingStudent.id, 
-                  matchingClass.id, 
-                  date, 
-                  attendanceRecord.status
-                )
-              }
+                    if (backupError) {
+                        console.warn('⚠️ Could not backup data:', backupError)
+                    } else {
+                        console.log('✅ Data backed up to user_data table')
+                    }
+
+                    // Migrate classes and students to structured tables
+                    for (const [className, classData] of Object.entries(allLocalData.classRecords)) {
+                        try {
+                            // Create class
+                            const newClass = await this.createClass(
+                                classData.name || className.split(' - ')[0], 
+                                classData.section || className.split(' - ')[1] || 'A'
+                            )
+                            
+                            // Add students and their grades
+                            for (const student of classData.students || []) {
+                                const newStudent = await this.addStudent(newClass.id, student.name, student.id)
+                                
+                                if (student.grades && Object.keys(student.grades).length > 0) {
+                                    await this.updateStudentGrades(newStudent.id, student.grades)
+                                }
+                            }
+
+                            // Update assignments
+                            if (classData.assignments && classData.assignments.length > 0) {
+                                await this.updateClassAssignments(newClass.id, classData.assignments)
+                            }
+                        } catch (classError) {
+                            console.warn(`⚠️ Could not migrate class ${className}:`, classError)
+                        }
+                    }
+
+                    // Migrate attendance data
+                    for (const [className, attendanceClass] of Object.entries(allLocalData.attendanceData)) {
+                        if (attendanceClass.students) {
+                            try {
+                                const date = attendanceClass.date || new Date().toISOString().split('T')[0]
+                                
+                                // Find corresponding class
+                                const classes = await this.getClasses()
+                                const matchingClass = classes.find(c => 
+                                    `${c.name} - ${c.section}` === className ||
+                                    c.name === className
+                                )
+                                
+                                if (matchingClass) {
+                                    for (const attendanceRecord of attendanceClass.students) {
+                                        try {
+                                            // Find corresponding student
+                                            const students = await this.getStudentsInClass(matchingClass.id)
+                                            const matchingStudent = students.find(s => s.student_id === attendanceRecord.studentId)
+                                            
+                                            if (matchingStudent && attendanceRecord.status) {
+                                                await this.recordAttendance(
+                                                    matchingStudent.id, 
+                                                    matchingClass.id, 
+                                                    date, 
+                                                    attendanceRecord.status
+                                                )
+                                            }
+                                        } catch (attendanceError) {
+                                            console.warn(`⚠️ Could not migrate attendance for ${attendanceRecord.studentId}:`, attendanceError)
+                                        }
+                                    }
+                                }
+                            } catch (classAttendanceError) {
+                                console.warn(`⚠️ Could not migrate attendance for class ${className}:`, classAttendanceError)
+                            }
+                        }
+                    }
+
+                    console.log('✅ Data migration completed successfully!')
+                    return true
+                } catch (error) {
+                    console.error('❌ Data migration failed:', error)
+                    throw error
+                }
             }
-          }
-        }
-      }
 
-      console.log('✅ Data migration completed successfully!')
-      return true
-    } catch (error) {
-      console.error('❌ Data migration failed:', error)
-      throw error
-    }
-  }
+            // Store user-specific data in backend
+            async storeUserData(dataKey, data) {
+                try {
+                    const user = await this.getCurrentUser()
+                    if (!user) return false
+
+                    const { error } = await supabase
+                        .from('user_data')
+                        .upsert({
+                            user_id: user.id,
+                            data: { [dataKey]: data },
+                            updated_at: new Date().toISOString()
+                        })
+
+                    if (error) throw error
+                    return true
+                } catch (error) {
+                    console.error('Error storing user data:', error)
+                    return false
+                }
+            }
+
+            // Retrieve user-specific data from backend
+            async getUserData(dataKey = null) {
+                try {
+                    const user = await this.getCurrentUser()
+                    if (!user) return null
+
+                    const { data, error } = await supabase
+                        .from('user_data')
+                        .select('data')
+                        .eq('user_id', user.id)
+                        .single()
+
+                    if (error) throw error
+                    
+                    if (dataKey) {
+                        return data?.data?.[dataKey] || null
+                    }
+                    return data?.data || null
+                } catch (error) {
+                    console.error('Error retrieving user data:', error)
+                    return null
+                }
+            }
 }
 
 // Export singleton instance

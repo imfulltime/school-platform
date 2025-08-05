@@ -59,11 +59,22 @@ CREATE TABLE attendance_records (
   UNIQUE(student_id, class_id, date)
 );
 
+-- User data table for storing app-specific data
+CREATE TABLE user_data (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  data JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
 -- Row Level Security Policies
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE classes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE attendance_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_data ENABLE ROW LEVEL SECURITY;
 
 -- Teachers can only see their own data
 CREATE POLICY "Teachers can view own profile" ON profiles
@@ -85,6 +96,10 @@ CREATE POLICY "Teachers can manage attendance for own classes" ON attendance_rec
       SELECT id FROM classes WHERE teacher_id = auth.uid()
     )
   );
+
+-- User data policies
+CREATE POLICY "Users can manage own data" ON user_data
+  FOR ALL USING (auth.uid() = user_id);
 ```
 
 ## Step 3: Install Supabase Client

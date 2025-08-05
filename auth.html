@@ -268,12 +268,38 @@
         async function initializeSupabase() {
             try {
                 // Import Supabase client
-                const { schoolAPI: api } = await import('./js/supabase-client.js');
-                schoolAPI = api;
+                const { schoolAPI: api, supabase } = await import('./js/supabase-client.js');
+                window.schoolAPI = api;
+                window.supabaseClient = supabase;
                 supabaseEnabled = true;
                 console.log('✅ Supabase client loaded successfully!');
+                
+                // Check if user is already authenticated
+                await checkAuthState();
             } catch (error) {
                 console.log('⚠️ Supabase not configured, using localStorage mode:', error.message);
+                supabaseEnabled = false;
+            }
+        }
+        
+        // Check authentication state
+        async function checkAuthState() {
+            if (!supabaseEnabled || !window.schoolAPI) return;
+            
+            try {
+                const user = await window.schoolAPI.getCurrentUser();
+                if (user) {
+                    showMessage('Welcome back! Redirecting to dashboard...', 'success');
+                    
+                    // Store user data for the session
+                    sessionStorage.setItem('currentUser', JSON.stringify(user));
+                    
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1500);
+                }
+            } catch (error) {
+                console.log('No authenticated user found');
             }
         }
         
@@ -318,23 +344,41 @@
                 const email = document.getElementById('loginEmail').value;
                 const password = document.getElementById('loginPassword').value;
 
-                if (supabaseEnabled && schoolAPI) {
+                if (supabaseEnabled && window.schoolAPI) {
                     // Use Supabase authentication
-                    await schoolAPI.signIn(email, password);
-                    showMessage('✅ Successfully signed in!', 'success');
+                    const result = await window.schoolAPI.signIn(email, password);
+                    const user = result.user;
                     
-                    // Show migration option if localStorage data exists
-                    if (localStorage.getItem('schoolPlatform_classRecords')) {
-                        document.getElementById('migrationSection').style.display = 'block';
-                    } else {
-                        // Redirect to dashboard
-                        setTimeout(() => {
-                            window.location.href = 'dashboard.html';
-                        }, 1000);
+                    if (user) {
+                        // Store user data in session
+                        sessionStorage.setItem('currentUser', JSON.stringify(user));
+                        
+                        // Create or update user profile in profiles table
+                        await createUserProfile(user);
+                        
+                        showMessage('✅ Successfully signed in!', 'success');
+                        
+                        // Show migration option if localStorage data exists
+                        if (localStorage.getItem('schoolPlatform_classRecords')) {
+                            document.getElementById('migrationSection').style.display = 'block';
+                        } else {
+                            // Redirect to dashboard
+                            setTimeout(() => {
+                                window.location.href = 'dashboard.html';
+                            }, 1500);
+                        }
                     }
                 } else {
                     // Demo mode - simple validation
                     if (email && password) {
+                        // Create demo user data
+                        const demoUser = {
+                            id: 'demo-user-' + Date.now(),
+                            email: email,
+                            user_metadata: { full_name: 'Demo Teacher' }
+                        };
+                        sessionStorage.setItem('currentUser', JSON.stringify(demoUser));
+                        
                         showMessage('✅ Signed in (Demo Mode)', 'success');
                         setTimeout(() => {
                             window.location.href = 'dashboard.html';
@@ -368,11 +412,25 @@
                     throw new Error('Passwords do not match');
                 }
 
-                if (supabaseEnabled && schoolAPI) {
+                if (supabaseEnabled && window.schoolAPI) {
                     // Use Supabase authentication
-                    await schoolAPI.signUp(email, password, name);
-                    showMessage('✅ Account created! Please check your email to verify.', 'success');
-                    showLogin(); // Switch back to login
+                    const result = await window.schoolAPI.signUp(email, password, name);
+                    
+                    if (result.user) {
+                        // Store signup data for profile creation after verification
+                        const signupData = {
+                            email: email,
+                            full_name: name,
+                            created_at: new Date().toISOString()
+                        };
+                        sessionStorage.setItem('pendingUserData', JSON.stringify(signupData));
+                        
+                        showMessage('✅ Account created! Please check your email to verify your account before signing in.', 'success');
+                        showLogin(); // Switch back to login
+                    } else if (result.data && result.data.user && !result.data.user.email_confirmed_at) {
+                        showMessage('✅ Account created! Please check your email to verify your account.', 'success');
+                        showLogin();
+                    }
                 } else {
                     // Demo mode
                     showMessage('✅ Account created (Demo Mode)', 'success');
@@ -387,21 +445,95 @@
         });
 
         // Forgot Password
-        window.showForgotPassword = function() {
-            if (supabaseEnabled) {
+        window.showForgotPassword = async function() {
+            if (supabaseEnabled && window.supabaseClient) {
                 const email = prompt('Enter your email address for password reset:');
                 if (email) {
-                    // Implement password reset
-                    showMessage('📧 Password reset email sent!', 'info');
+                    try {
+                        const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
+                            redirectTo: window.location.origin + '/auth.html'
+                        });
+                        
+                        if (error) {
+                            throw error;
+                        }
+                        
+                        showMessage('📧 Password reset email sent! Check your inbox.', 'success');
+                    } catch (error) {
+                        showMessage('❌ Error sending reset email: ' + error.message, 'error');
+                    }
                 }
             } else {
                 alert('Password reset not available in demo mode. Please set up Supabase for full authentication features.');
             }
         }
 
+        // Handle authentication state changes
+        window.addEventListener('load', () => {
+            if (window.supabaseClient) {
+                window.supabaseClient.auth.onAuthStateChange((event, session) => {
+                    console.log('Auth state changed:', event, session);
+                    
+                    if (event === 'SIGNED_IN' && session) {
+                        sessionStorage.setItem('currentUser', JSON.stringify(session.user));
+                        createUserProfile(session.user);
+                    } else if (event === 'SIGNED_OUT') {
+                        sessionStorage.removeItem('currentUser');
+                        if (window.location.pathname !== '/auth.html') {
+                            window.location.href = 'auth.html';
+                        }
+                    }
+                });
+            }
+        });
+            
+            try {
+                // Check if profile already exists
+                const { data: existingProfile } = await window.supabaseClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+                
+                if (!existingProfile) {
+                    // Create new profile
+                    const profileData = {
+                        id: user.id,
+                        email: user.email,
+                        full_name: user.user_metadata?.full_name || user.email.split('@')[0],
+                        role: 'teacher',
+                        created_at: new Date().toISOString(),
+                        last_sign_in: new Date().toISOString()
+                    };
+                    
+                    const { error } = await window.supabaseClient
+                        .from('profiles')
+                        .insert(profileData);
+                    
+                    if (error) {
+                        console.error('Error creating profile:', error);
+                    } else {
+                        console.log('✅ User profile created successfully');
+                    }
+                } else {
+                    // Update last sign in
+                    const { error } = await window.supabaseClient
+                        .from('profiles')
+                        .update({ last_sign_in: new Date().toISOString() })
+                        .eq('id', user.id);
+                    
+                    if (error) {
+                        console.error('Error updating profile:', error);
+                    }
+                }
+            } catch (error) {
+                console.error('Error managing user profile:', error);
+            }
+        }
+
         // Data Migration
         window.migrateData = async function() {
-            if (!supabaseEnabled || !schoolAPI) {
+            if (!supabaseEnabled || !window.schoolAPI) {
                 alert('Supabase not configured. Please follow the setup guide.');
                 return;
             }
@@ -412,7 +544,7 @@
 
             try {
                 showMessage('🔄 Migrating your data...', 'info');
-                await schoolAPI.migrateLocalData();
+                await window.schoolAPI.migrateLocalData();
                 showMessage('✅ Data migration completed successfully!', 'success');
                 
                 setTimeout(() => {
@@ -423,22 +555,7 @@
             }
         }
 
-        // Check if user is already signed in
-        window.addEventListener('load', async () => {
-            if (supabaseEnabled && schoolAPI) {
-                try {
-                    const user = await schoolAPI.getCurrentUser();
-                    if (user) {
-                        showMessage('Welcome back! Redirecting...', 'success');
-                        setTimeout(() => {
-                            window.location.href = 'dashboard.html';
-                        }, 1000);
-                    }
-                } catch (error) {
-                    console.log('No user session found');
-                }
-            }
-        });
+
     </script>
 </body>
 </html>
