@@ -156,13 +156,25 @@
         }
         
         .demo-info {
-            background: #fff3cd;
-            color: #856404;
+            background: #f8d7da;
+            color: #721c24;
             padding: 15px;
             border-radius: 8px;
             margin-top: 20px;
             font-size: 14px;
             text-align: center;
+            border: 1px solid #f5c6cb;
+        }
+
+        .supabase-info {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: center;
+            border: 1px solid #c3e6cb;
         }
         
         .migration-section {
@@ -247,8 +259,12 @@
             <a href="#" onclick="showForgotPassword()">Forgot your password?</a>
         </div>
 
-        <div class="demo-info">
-            <strong>Demo Mode:</strong> You can still use localStorage (current system) or set up Supabase for online storage.
+        <div class="demo-info" id="demoInfo" style="display: none;">
+            <strong>Demo Mode:</strong> Authentication is disabled. Please set up Supabase for secure authentication.
+        </div>
+
+        <div class="supabase-info" id="supabaseInfo" style="display: none;">
+            <strong>🔐 Secure Mode:</strong> Full authentication enabled with Supabase backend storage.
         </div>
 
         <!-- Data Migration Section -->
@@ -274,12 +290,41 @@
                 supabaseEnabled = true;
                 console.log('✅ Supabase client loaded successfully!');
                 
+                // Show secure mode indicator
+                document.getElementById('supabaseInfo').style.display = 'block';
+                document.getElementById('demoInfo').style.display = 'none';
+                
                 // Check if user is already authenticated
                 await checkAuthState();
             } catch (error) {
-                console.log('⚠️ Supabase not configured, using localStorage mode:', error.message);
+                console.log('⚠️ Supabase not configured, demo mode disabled for security:', error.message);
                 supabaseEnabled = false;
+                
+                // Show warning that authentication is not available
+                document.getElementById('demoInfo').style.display = 'block';
+                document.getElementById('supabaseInfo').style.display = 'none';
+                
+                // Disable auth forms for security
+                disableAuthForms();
             }
+        }
+
+        // Disable authentication forms when Supabase is not configured
+        function disableAuthForms() {
+            const loginBtn = document.getElementById('loginBtn');
+            const signupBtn = document.getElementById('signupBtn');
+            const forms = document.querySelectorAll('input');
+            
+            loginBtn.disabled = true;
+            signupBtn.disabled = true;
+            loginBtn.textContent = 'Authentication Disabled';
+            signupBtn.textContent = 'Authentication Disabled';
+            
+            forms.forEach(input => {
+                input.disabled = true;
+            });
+            
+            showMessage('⚠️ Authentication disabled. Please configure Supabase for secure access.', 'error');
         }
         
         // Check authentication state
@@ -345,11 +390,12 @@
                 const password = document.getElementById('loginPassword').value;
 
                 if (supabaseEnabled && window.schoolAPI) {
-                    // Use Supabase authentication
+                    // Use Supabase authentication - SECURE MODE
                     const result = await window.schoolAPI.signIn(email, password);
-                    const user = result.user;
                     
-                    if (user) {
+                    if (result && result.user) {
+                        const user = result.user;
+                        
                         // Store user data in session
                         sessionStorage.setItem('currentUser', JSON.stringify(user));
                         
@@ -367,25 +413,12 @@
                                 window.location.href = 'dashboard.html';
                             }, 1500);
                         }
+                    } else {
+                        throw new Error('Invalid credentials or authentication failed');
                     }
                 } else {
-                    // Demo mode - simple validation
-                    if (email && password) {
-                        // Create demo user data
-                        const demoUser = {
-                            id: 'demo-user-' + Date.now(),
-                            email: email,
-                            user_metadata: { full_name: 'Demo Teacher' }
-                        };
-                        sessionStorage.setItem('currentUser', JSON.stringify(demoUser));
-                        
-                        showMessage('✅ Signed in (Demo Mode)', 'success');
-                        setTimeout(() => {
-                            window.location.href = 'dashboard.html';
-                        }, 1000);
-                    } else {
-                        throw new Error('Please enter both email and password');
-                    }
+                    // No authentication available - SECURITY DISABLED
+                    throw new Error('Authentication is not configured. Please set up Supabase for secure access.');
                 }
             } catch (error) {
                 showMessage('❌ ' + error.message, 'error');
@@ -413,10 +446,10 @@
                 }
 
                 if (supabaseEnabled && window.schoolAPI) {
-                    // Use Supabase authentication
+                    // Use Supabase authentication - SECURE MODE
                     const result = await window.schoolAPI.signUp(email, password, name);
                     
-                    if (result.user) {
+                    if (result && (result.user || (result.data && result.data.user))) {
                         // Store signup data for profile creation after verification
                         const signupData = {
                             email: email,
@@ -427,14 +460,12 @@
                         
                         showMessage('✅ Account created! Please check your email to verify your account before signing in.', 'success');
                         showLogin(); // Switch back to login
-                    } else if (result.data && result.data.user && !result.data.user.email_confirmed_at) {
-                        showMessage('✅ Account created! Please check your email to verify your account.', 'success');
-                        showLogin();
+                    } else {
+                        throw new Error('Account creation failed. Please try again.');
                     }
                 } else {
-                    // Demo mode
-                    showMessage('✅ Account created (Demo Mode)', 'success');
-                    showLogin();
+                    // No authentication available - SECURITY DISABLED
+                    throw new Error('Account creation is not available. Please set up Supabase for secure authentication.');
                 }
             } catch (error) {
                 showMessage('❌ ' + error.message, 'error');
@@ -464,7 +495,7 @@
                     }
                 }
             } else {
-                alert('Password reset not available in demo mode. Please set up Supabase for full authentication features.');
+                showMessage('❌ Password reset not available. Secure authentication is not configured.', 'error');
             }
         }
 
