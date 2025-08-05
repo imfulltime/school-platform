@@ -6,7 +6,9 @@ A modern, responsive web application for classroom management. Track attendance,
 
 ### ✅ Implemented
 - **Attendance Tracking**: Mark students present/absent/tardy with real-time statistics
-- **Grade Management**: Record and track student grades with automatic average calculations
+- **Class Record System**: Organize students by classes/sections with grade management
+- **Assignment Management**: Create assignments and record grades in spreadsheet-like format
+- **Automatic Calculations**: Real-time student averages and class statistics
 - **Data Persistence**: All data automatically saved to browser localStorage
 - **Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
 - **Real-time Dashboard**: Live statistics from your actual attendance and grade data
@@ -32,7 +34,8 @@ A modern, responsive web application for classroom management. Track attendance,
 
 Your data is stored locally in your browser using localStorage:
 - **Attendance data**: Tracks student status by class and date
-- **Grade data**: Stores student information and all recorded grades
+- **Class records**: Organized by classes/sections with student rosters
+- **Grade data**: Assignment-based grading with automatic averages
 - **Automatic saving**: No need to manually save - everything is persistent
 
 ## 🛠️ Technical Details
@@ -44,8 +47,11 @@ Your data is stored locally in your browser using localStorage:
 
 ## 🔄 Latest Updates
 
+- ✅ **NEW: Class Record System** - Organized grade management by classes/sections
+- ✅ **Table-based Grade Entry** - Spreadsheet-like interface for recording grades
+- ✅ **Assignment Management** - Create and manage assignments dynamically
+- ✅ **Real-time Calculations** - Automatic student and class averages
 - ✅ Added localStorage persistence for all data
 - ✅ Real-time dashboard statistics from actual data
 - ✅ Data export functionality
 - ✅ Improved navigation flow
-- ✅ Auto-save on all data changes

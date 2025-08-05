@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grade Recording System</title>
+    <title>Class Record System - School Platform</title>
     <style>
         * {
             margin: 0;
@@ -49,7 +49,59 @@
             font-size: 1.1em;
         }
 
+        /* Navigation Header */
+        .nav-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-btn {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .class-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .class-selector select {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            min-width: 200px;
+        }
+
         .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .class-management {
             display: grid;
             grid-template-columns: 1fr 2fr;
             gap: 30px;
@@ -135,99 +187,90 @@
             box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
         }
 
-        .students-grid {
-            display: grid;
-            gap: 20px;
+        .class-record-table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 20px;
-        }
-
-        .student-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
-            border-radius: 15px;
-            padding: 20px;
-            border-left: 5px solid #667eea;
-            transition: all 0.3s ease;
-            position: relative;
+            background: white;
+            border-radius: 10px;
             overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .student-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
+        .class-record-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
         }
 
-        .student-card:hover::before {
-            transform: scaleX(1);
+        .class-record-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
         }
 
-        .student-card:hover {
-            transform: translateX(5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        .class-record-table tr:hover {
+            background: #f8f9ff;
+        }
+
+        .grade-input {
+            width: 70px;
+            padding: 5px 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .grade-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .add-assignment {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .student-row {
+            transition: all 0.2s ease;
         }
 
         .student-name {
-            font-size: 1.3em;
-            font-weight: 700;
+            font-weight: 600;
             color: #333;
-            margin-bottom: 10px;
         }
 
         .student-id {
             color: #666;
             font-size: 0.9em;
-            margin-bottom: 15px;
         }
 
-        .grades-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .grade-item {
-            background: linear-gradient(45deg, #667eea, #764ba2);
+        .average-display {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 15px;
             color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            font-weight: 600;
-            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+            text-align: center;
+            min-width: 50px;
         }
 
-        .average-grade {
-            font-size: 1.1em;
-            font-weight: 700;
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-
-        .student-actions {
-            display: flex;
-            gap: 10px;
-        }
+        .grade-a { background: #4CAF50; }
+        .grade-b { background: #2196F3; }
+        .grade-c { background: #FF9800; }
+        .grade-d { background: #FF5722; }
+        .grade-f { background: #f44336; }
 
         .btn-small {
             padding: 8px 15px;
             font-size: 14px;
-        }
-
-        .grade-form {
-            display: flex;
-            gap: 10px;
-            align-items: end;
-            margin-top: 15px;
-        }
-
-        .grade-form input {
-            flex: 1;
         }
 
         .stats-card {
@@ -280,8 +323,32 @@
             opacity: 0.3;
         }
 
+        .no-class-selected {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .create-class-form {
+            background: #f8f9ff;
+            border: 2px dashed #667eea;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .assignment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+        }
+
         @media (max-width: 768px) {
-            .main-content {
+            .class-management {
                 grid-template-columns: 1fr;
             }
             
@@ -291,6 +358,20 @@
             
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .nav-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .class-record-table {
+                font-size: 14px;
+            }
+
+            .class-record-table th,
+            .class-record-table td {
+                padding: 8px;
             }
         }
 
@@ -306,96 +387,146 @@
 </head>
 <body>
     <div class="container">
+        <!-- Navigation Header -->
+        <div class="nav-header fade-in">
+            <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+            <div class="class-selector">
+                <label for="classSelect">Select Class:</label>
+                <select id="classSelect" onchange="loadClass()">
+                    <option value="">Choose a class...</option>
+                </select>
+                <button class="btn" onclick="showCreateClassForm()">+ New Class</button>
+            </div>
+        </div>
+
+        <!-- Header -->
         <div class="header fade-in">
-            <h1>📚 Grade Recording System</h1>
-            <p>Manage student grades and track academic performance</p>
+            <h1>📚 Class Record System</h1>
+            <p>Manage student grades and track academic performance by class</p>
         </div>
 
-        <div class="main-content">
-            <div class="card fade-in">
-                <h2>Add New Student</h2>
-                <form id="studentForm">
-                    <div class="form-group">
-                        <label for="studentName">Student Name:</label>
-                        <input type="text" id="studentName" required>
+        <!-- Create Class Form (Hidden by default) -->
+        <div id="createClassForm" class="create-class-form fade-in" style="display: none;">
+            <h3>Create New Class</h3>
+            <form id="newClassForm">
+                <div style="display: flex; gap: 15px; align-items: end;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="className">Class Name:</label>
+                        <input type="text" id="className" placeholder="e.g., Math 101, English 9A" required>
                     </div>
-                    <div class="form-group">
-                        <label for="studentId">Student ID:</label>
-                        <input type="text" id="studentId" required>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="classSection">Section:</label>
+                        <input type="text" id="classSection" placeholder="e.g., Period 1, Room 205" required>
                     </div>
-                    <div class="form-group">
-                        <label for="studentGrade">Class/Grade:</label>
-                        <select id="studentGrade" required>
-                            <option value="">Select Grade</option>
-                            <option value="9th Grade">9th Grade</option>
-                            <option value="10th Grade">10th Grade</option>
-                            <option value="11th Grade">11th Grade</option>
-                            <option value="12th Grade">12th Grade</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn">Add Student</button>
-                </form>
-            </div>
-
-            <div class="card fade-in">
-                <h2>Student Records</h2>
-                <div id="studentsContainer">
-                    <div class="empty-state">
-                        <div style="font-size: 4em; margin-bottom: 20px; opacity: 0.3;">👥</div>
-                        <p>No students added yet. Add your first student to get started!</p>
-                    </div>
+                    <button type="submit" class="btn">Create Class</button>
+                    <button type="button" class="btn btn-danger" onclick="hideCreateClassForm()">Cancel</button>
                 </div>
-            </div>
+            </form>
         </div>
 
-        <div class="card stats-card fade-in">
-            <h2>Class Statistics</h2>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span class="stat-number" id="totalStudents">0</span>
-                    <div class="stat-label">Total Students</div>
+        <!-- Main Content -->
+        <div id="mainContent" class="main-content">
+            <div id="noClassView" class="no-class-selected">
+                <div style="font-size: 4em; margin-bottom: 20px; opacity: 0.3;">📚</div>
+                <h3>Welcome to Class Record System</h3>
+                <p>Select a class from the dropdown above or create a new class to get started.</p>
+            </div>
+
+            <div id="classView" style="display: none;">
+                <!-- Class Management -->
+                <div class="class-management">
+                    <div class="card fade-in">
+                        <h2>Add Student to Class</h2>
+                        <form id="studentForm">
+                            <div class="form-group">
+                                <label for="studentName">Student Name:</label>
+                                <input type="text" id="studentName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="studentId">Student ID:</label>
+                                <input type="text" id="studentId" required>
+                            </div>
+                            <button type="submit" class="btn">Add Student</button>
+                        </form>
+                    </div>
+
+                    <div class="card fade-in">
+                        <h2 id="classTitle">Class Record</h2>
+                        <div class="assignment-header">
+                            <div>
+                                <strong>Assignment:</strong>
+                                <input type="text" id="assignmentName" placeholder="Enter assignment name" style="margin-left: 10px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                <button class="add-assignment" onclick="addAssignmentColumn()">Add Assignment</button>
+                            </div>
+                            <button class="btn" onclick="saveAllGrades()">💾 Save All Grades</button>
+                        </div>
+                        <div id="classRecordContainer"></div>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="classAverage">0.0</span>
-                    <div class="stat-label">Class Average</div>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="totalGrades">0</span>
-                    <div class="stat-label">Total Grades</div>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="highestGrade">-</span>
-                    <div class="stat-label">Highest Grade</div>
+
+                <!-- Statistics -->
+                <div class="card stats-card fade-in">
+                    <h2>Class Statistics</h2>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalStudents">0</span>
+                            <div class="stat-label">Total Students</div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="classAverage">0.0</span>
+                            <div class="stat-label">Class Average</div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalAssignments">0</span>
+                            <div class="stat-label">Total Assignments</div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="highestAverage">-</span>
+                            <div class="stat-label">Highest Average</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        class GradeRecordingSystem {
+        class ClassRecordSystem {
             constructor() {
-                this.students = [];
+                this.classes = {};
+                this.currentClass = '';
                 this.init();
             }
 
             init() {
                 this.loadSavedData();
+                this.populateClassSelector();
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                // New class form
+                document.getElementById('newClassForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.createClass();
+                });
+
+                // Add student form
                 document.getElementById('studentForm').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.addStudent();
                 });
-                this.updateDisplay();
             }
 
             // Load saved data from localStorage
             loadSavedData() {
-                const savedGrades = localStorage.getItem('schoolPlatform_grades');
-                if (savedGrades) {
+                const savedClasses = localStorage.getItem('schoolPlatform_classRecords');
+                if (savedClasses) {
                     try {
-                        this.students = JSON.parse(savedGrades);
+                        this.classes = JSON.parse(savedClasses);
                     } catch (e) {
-                        console.log('Error loading saved grade data:', e);
-                        this.students = [];
+                        console.log('Error loading saved class data:', e);
+                        this.classes = {};
                     }
                 }
             }
@@ -403,190 +534,326 @@
             // Save data to localStorage
             saveDataToStorage() {
                 try {
-                    localStorage.setItem('schoolPlatform_grades', JSON.stringify(this.students));
+                    localStorage.setItem('schoolPlatform_classRecords', JSON.stringify(this.classes));
                 } catch (e) {
-                    console.log('Error saving grade data to localStorage:', e);
+                    console.log('Error saving class data to localStorage:', e);
                 }
             }
 
-            addStudent() {
-                const name = document.getElementById('studentName').value.trim();
-                const id = document.getElementById('studentId').value.trim();
-                const grade = document.getElementById('studentGrade').value;
+            createClass() {
+                const className = document.getElementById('className').value.trim();
+                const classSection = document.getElementById('classSection').value.trim();
 
-                if (!name || !id || !grade) {
+                if (!className || !classSection) {
                     alert('Please fill in all fields');
                     return;
                 }
 
-                // Check for duplicate student ID
-                if (this.students.find(student => student.id === id)) {
-                    alert('Student ID already exists');
+                const classId = `${className} - ${classSection}`;
+                
+                if (this.classes[classId]) {
+                    alert('A class with this name and section already exists');
+                    return;
+                }
+
+                this.classes[classId] = {
+                    name: className,
+                    section: classSection,
+                    students: [],
+                    assignments: [],
+                    createdAt: new Date().toLocaleDateString()
+                };
+
+                this.saveDataToStorage();
+                this.populateClassSelector();
+                this.hideCreateClassForm();
+                this.showSuccessMessage(`Class "${classId}" created successfully!`);
+                
+                // Auto-select the new class
+                document.getElementById('classSelect').value = classId;
+                this.loadClass();
+            }
+
+            addStudent() {
+                if (!this.currentClass) {
+                    alert('Please select a class first');
+                    return;
+                }
+
+                const name = document.getElementById('studentName').value.trim();
+                const id = document.getElementById('studentId').value.trim();
+
+                if (!name || !id) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+
+                const currentClassData = this.classes[this.currentClass];
+                
+                // Check for duplicate student ID in this class
+                if (currentClassData.students.find(student => student.id === id)) {
+                    alert('Student ID already exists in this class');
                     return;
                 }
 
                 const student = {
                     name: name,
                     id: id,
-                    grade: grade,
-                    grades: [],
+                    grades: {},
                     createdAt: new Date().toLocaleDateString()
                 };
 
-                this.students.push(student);
-                this.updateDisplay();
-                this.clearForm();
-                this.saveDataToStorage(); // Auto-save when student added
-                this.showSuccessMessage(`Student ${name} added successfully!`);
+                currentClassData.students.push(student);
+                this.saveDataToStorage();
+                this.renderClassRecord();
+                this.updateStatistics();
+                this.clearStudentForm();
+                this.showSuccessMessage(`Student ${name} added to ${this.currentClass}`);
             }
 
-            addGrade(studentId, subject, score) {
-                const student = this.students.find(s => s.id === studentId);
-                if (student && score >= 0 && score <= 100) {
-                    student.grades.push({
-                        subject: subject,
-                        score: parseFloat(score),
-                        date: new Date().toLocaleDateString()
-                    });
-                    this.updateDisplay();
-                    this.saveDataToStorage(); // Auto-save when grade added
-                    return true;
+            populateClassSelector() {
+                const selector = document.getElementById('classSelect');
+                selector.innerHTML = '<option value="">Choose a class...</option>';
+                
+                Object.keys(this.classes).forEach(classId => {
+                    const option = document.createElement('option');
+                    option.value = classId;
+                    option.textContent = classId;
+                    selector.appendChild(option);
+                });
+            }
+
+            loadClass() {
+                const classId = document.getElementById('classSelect').value;
+                this.currentClass = classId;
+
+                if (!classId) {
+                    document.getElementById('noClassView').style.display = 'block';
+                    document.getElementById('classView').style.display = 'none';
+                    return;
                 }
-                return false;
-            }
 
-            removeStudent(studentId) {
-                if (confirm('Are you sure you want to remove this student?')) {
-                    this.students = this.students.filter(s => s.id !== studentId);
-                    this.updateDisplay();
-                    this.saveDataToStorage(); // Auto-save when student removed
-                }
-            }
-
-            calculateAverage(grades) {
-                if (grades.length === 0) return 0;
-                const sum = grades.reduce((acc, grade) => acc + grade.score, 0);
-                return (sum / grades.length).toFixed(1);
-            }
-
-            updateDisplay() {
-                this.renderStudents();
+                document.getElementById('noClassView').style.display = 'none';
+                document.getElementById('classView').style.display = 'block';
+                document.getElementById('classTitle').textContent = `${classId} Record`;
+                
+                this.renderClassRecord();
                 this.updateStatistics();
             }
 
-            renderStudents() {
-                const container = document.getElementById('studentsContainer');
-                
-                if (this.students.length === 0) {
+            renderClassRecord() {
+                if (!this.currentClass) return;
+
+                const classData = this.classes[this.currentClass];
+                const container = document.getElementById('classRecordContainer');
+
+                if (classData.students.length === 0) {
                     container.innerHTML = `
                         <div class="empty-state">
-                            <div style="font-size: 4em; margin-bottom: 20px; opacity: 0.3;">👥</div>
-                            <p>No students added yet. Add your first student to get started!</p>
+                            <div style="font-size: 3em; margin-bottom: 15px; opacity: 0.3;">👥</div>
+                            <p>No students in this class yet. Add students to start recording grades.</p>
                         </div>
                     `;
                     return;
                 }
 
-                container.innerHTML = `
-                    <div class="students-grid">
-                        ${this.students.map(student => `
-                            <div class="student-card">
-                                <div class="student-name">${student.name}</div>
-                                <div class="student-id">ID: ${student.id} | ${student.grade}</div>
-                                
-                                <div class="grades-container">
-                                    ${student.grades.length > 0 ? 
-                                        student.grades.map(grade => 
-                                            `<div class="grade-item">${grade.subject}: ${grade.score}%</div>`
-                                        ).join('') : 
-                                        '<em style="color: #999;">No grades recorded yet</em>'
-                                    }
-                                </div>
-                                
-                                <div class="average-grade">
-                                    Average: ${this.calculateAverage(student.grades)}%
-                                    ${student.grades.length > 0 ? this.getGradeLetter(this.calculateAverage(student.grades)) : ''}
-                                </div>
-                                
-                                <div class="grade-form">
-                                    <div class="form-group" style="margin: 0; flex: 1;">
-                                        <input type="text" placeholder="Subject" id="subject-${student.id}" style="margin-bottom: 5px;">
-                                    </div>
-                                    <div class="form-group" style="margin: 0; flex: 1;">
-                                        <input type="number" placeholder="Score (0-100)" min="0" max="100" id="score-${student.id}">
-                                    </div>
-                                    <button class="btn btn-small" onclick="gradeSystem.addGradeToStudent('${student.id}')">
-                                        Add Grade
-                                    </button>
-                                </div>
-                                
-                                <div class="student-actions">
-                                    <button class="btn btn-small btn-danger" onclick="gradeSystem.removeStudent('${student.id}')">
-                                        Remove Student
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
+                // Build table
+                let tableHTML = `
+                    <table class="class-record-table">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Student ID</th>
+                                ${classData.assignments.map(assignment => 
+                                    `<th>${assignment} <button onclick="classSystem.removeAssignment('${assignment}')" style="background: #ff4444; color: white; border: none; border-radius: 3px; padding: 2px 6px; margin-left: 5px; cursor: pointer;">×</button></th>`
+                                ).join('')}
+                                <th>Average</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                 `;
+
+                classData.students.forEach(student => {
+                    const average = this.calculateStudentAverage(student);
+                    const averageClass = this.getAverageClass(average);
+                    
+                    tableHTML += `
+                        <tr class="student-row">
+                            <td>
+                                <div class="student-name">${student.name}</div>
+                            </td>
+                            <td>
+                                <div class="student-id">${student.id}</div>
+                            </td>
+                            ${classData.assignments.map(assignment => 
+                                `<td><input type="number" class="grade-input" min="0" max="100" placeholder="--" 
+                                    value="${student.grades[assignment] || ''}" 
+                                    onchange="classSystem.updateGrade('${student.id}', '${assignment}', this.value)"></td>`
+                            ).join('')}
+                            <td>
+                                <div class="average-display ${averageClass}">
+                                    ${average > 0 ? average.toFixed(1) + '%' : '--'}
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-small btn-danger" onclick="classSystem.removeStudent('${student.id}')">Remove</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+
+                container.innerHTML = tableHTML;
             }
 
-            addGradeToStudent(studentId) {
-                const subjectInput = document.getElementById(`subject-${studentId}`);
-                const scoreInput = document.getElementById(`score-${studentId}`);
-                
-                const subject = subjectInput.value.trim();
-                const score = parseFloat(scoreInput.value);
-
-                if (!subject || isNaN(score) || score < 0 || score > 100) {
-                    alert('Please enter a valid subject and score (0-100)');
+            addAssignmentColumn() {
+                const assignmentName = document.getElementById('assignmentName').value.trim();
+                if (!assignmentName) {
+                    alert('Please enter an assignment name');
                     return;
                 }
 
-                if (this.addGrade(studentId, subject, score)) {
-                    subjectInput.value = '';
-                    scoreInput.value = '';
-                    this.showSuccessMessage(`Grade added: ${subject} - ${score}%`);
+                if (!this.currentClass) {
+                    alert('Please select a class first');
+                    return;
+                }
+
+                const classData = this.classes[this.currentClass];
+                
+                if (classData.assignments.includes(assignmentName)) {
+                    alert('Assignment already exists');
+                    return;
+                }
+
+                classData.assignments.push(assignmentName);
+                this.saveDataToStorage();
+                this.renderClassRecord();
+                document.getElementById('assignmentName').value = '';
+                this.showSuccessMessage(`Assignment "${assignmentName}" added`);
+            }
+
+            removeAssignment(assignmentName) {
+                if (!confirm(`Remove assignment "${assignmentName}"? This will delete all grades for this assignment.`)) {
+                    return;
+                }
+
+                const classData = this.classes[this.currentClass];
+                classData.assignments = classData.assignments.filter(a => a !== assignmentName);
+                
+                // Remove grades for this assignment from all students
+                classData.students.forEach(student => {
+                    delete student.grades[assignmentName];
+                });
+
+                this.saveDataToStorage();
+                this.renderClassRecord();
+                this.updateStatistics();
+                this.showSuccessMessage(`Assignment "${assignmentName}" removed`);
+            }
+
+            updateGrade(studentId, assignment, grade) {
+                const classData = this.classes[this.currentClass];
+                const student = classData.students.find(s => s.id === studentId);
+                
+                if (student) {
+                    if (grade === '' || grade === null) {
+                        delete student.grades[assignment];
+                    } else {
+                        const numGrade = parseFloat(grade);
+                        if (numGrade >= 0 && numGrade <= 100) {
+                            student.grades[assignment] = numGrade;
+                        }
+                    }
+                    this.saveDataToStorage();
+                    this.renderClassRecord();
+                    this.updateStatistics();
                 }
             }
 
-            getGradeLetter(average) {
-                const avg = parseFloat(average);
-                if (avg >= 90) return '(A)';
-                if (avg >= 80) return '(B)';
-                if (avg >= 70) return '(C)';
-                if (avg >= 60) return '(D)';
-                return '(F)';
+            removeStudent(studentId) {
+                if (!confirm('Are you sure you want to remove this student?')) {
+                    return;
+                }
+
+                const classData = this.classes[this.currentClass];
+                classData.students = classData.students.filter(s => s.id !== studentId);
+                this.saveDataToStorage();
+                this.renderClassRecord();
+                this.updateStatistics();
+                this.showSuccessMessage('Student removed from class');
+            }
+
+            calculateStudentAverage(student) {
+                const grades = Object.values(student.grades);
+                if (grades.length === 0) return 0;
+                const sum = grades.reduce((acc, grade) => acc + grade, 0);
+                return sum / grades.length;
+            }
+
+            getAverageClass(average) {
+                if (average >= 90) return 'grade-a';
+                if (average >= 80) return 'grade-b';
+                if (average >= 70) return 'grade-c';
+                if (average >= 60) return 'grade-d';
+                return 'grade-f';
             }
 
             updateStatistics() {
-                const totalStudents = this.students.length;
-                const allGrades = this.students.flatMap(s => s.grades);
-                const totalGrades = allGrades.length;
+                if (!this.currentClass) return;
+
+                const classData = this.classes[this.currentClass];
+                const totalStudents = classData.students.length;
+                const totalAssignments = classData.assignments.length;
                 
-                let classAverage = 0;
-                let highestGrade = '-';
-                
-                if (allGrades.length > 0) {
-                    const sum = allGrades.reduce((acc, grade) => acc + grade.score, 0);
-                    classAverage = (sum / allGrades.length).toFixed(1);
-                    highestGrade = Math.max(...allGrades.map(g => g.score)) + '%';
-                }
+                let classAverageSum = 0;
+                let studentsWithGrades = 0;
+                let highestAverage = 0;
+
+                classData.students.forEach(student => {
+                    const average = this.calculateStudentAverage(student);
+                    if (average > 0) {
+                        classAverageSum += average;
+                        studentsWithGrades++;
+                        if (average > highestAverage) {
+                            highestAverage = average;
+                        }
+                    }
+                });
+
+                const classAverage = studentsWithGrades > 0 ? (classAverageSum / studentsWithGrades) : 0;
 
                 document.getElementById('totalStudents').textContent = totalStudents;
-                document.getElementById('classAverage').textContent = classAverage;
-                document.getElementById('totalGrades').textContent = totalGrades;
-                document.getElementById('highestGrade').textContent = highestGrade;
+                document.getElementById('classAverage').textContent = classAverage.toFixed(1);
+                document.getElementById('totalAssignments').textContent = totalAssignments;
+                document.getElementById('highestAverage').textContent = highestAverage > 0 ? highestAverage.toFixed(1) + '%' : '--';
             }
 
-            clearForm() {
+            saveAllGrades() {
+                this.saveDataToStorage();
+                this.showSuccessMessage('All grades saved successfully!');
+            }
+
+            clearStudentForm() {
                 document.getElementById('studentName').value = '';
                 document.getElementById('studentId').value = '';
-                document.getElementById('studentGrade').value = '';
+            }
+
+            showCreateClassForm() {
+                document.getElementById('createClassForm').style.display = 'block';
+            }
+
+            hideCreateClassForm() {
+                document.getElementById('createClassForm').style.display = 'none';
+                document.getElementById('className').value = '';
+                document.getElementById('classSection').value = '';
             }
 
             showSuccessMessage(message) {
-                // Create a temporary success message
                 const messageDiv = document.createElement('div');
                 messageDiv.style.cssText = `
                     position: fixed;
@@ -612,9 +879,30 @@
         }
 
         // Initialize the system
-        const gradeSystem = new GradeRecordingSystem();
+        const classSystem = new ClassRecordSystem();
 
-        // Add some CSS animations
+        // Global functions for HTML onclick handlers
+        function loadClass() {
+            classSystem.loadClass();
+        }
+
+        function showCreateClassForm() {
+            classSystem.showCreateClassForm();
+        }
+
+        function hideCreateClassForm() {
+            classSystem.hideCreateClassForm();
+        }
+
+        function addAssignmentColumn() {
+            classSystem.addAssignmentColumn();
+        }
+
+        function saveAllGrades() {
+            classSystem.saveAllGrades();
+        }
+
+        // Add CSS animations
         const style = document.createElement('style');
         style.textContent = `
             @keyframes slideIn {

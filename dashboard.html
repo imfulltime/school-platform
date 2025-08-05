@@ -392,7 +392,24 @@
                 }
             }
             
-            // Count grade data
+            // Count grade data from new class record system
+            const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
+            if (savedClassRecords) {
+                try {
+                    const classes = JSON.parse(savedClassRecords);
+                    Object.values(classes).forEach(classData => {
+                        classData.students.forEach(student => {
+                            const studentGrades = Object.values(student.grades);
+                            totalGrades += studentGrades.length;
+                            gradeSum += studentGrades.reduce((sum, grade) => sum + grade, 0);
+                        });
+                    });
+                } catch (e) {
+                    console.log('Error loading class record data:', e);
+                }
+            }
+            
+            // Also check old grade system for backward compatibility
             if (savedGrades) {
                 try {
                     const gradeStudents = JSON.parse(savedGrades);
@@ -415,7 +432,7 @@
             document.querySelector('.stat-card:nth-child(4) .stat-number').textContent = classAverage + '%';
             
             // Show data status if we have saved data
-            if (savedStudents || savedGrades) {
+            if (savedStudents || savedGrades || savedClassRecords) {
                 document.getElementById('dataStatus').style.display = 'block';
             }
         }
@@ -472,6 +489,7 @@
             const data = {
                 students: localStorage.getItem('schoolPlatform_students'),
                 grades: localStorage.getItem('schoolPlatform_grades'),
+                classRecords: localStorage.getItem('schoolPlatform_classRecords'),
                 attendance: localStorage.getItem('schoolPlatform_attendance'),
                 exportDate: new Date().toISOString()
             };
@@ -492,6 +510,7 @@
         function clearAllData() {
             localStorage.removeItem('schoolPlatform_students');
             localStorage.removeItem('schoolPlatform_grades');
+            localStorage.removeItem('schoolPlatform_classRecords');
             localStorage.removeItem('schoolPlatform_attendance');
             
             // Refresh dashboard
