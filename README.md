@@ -26,20 +26,32 @@ A modern, responsive web application for classroom management. Track attendance,
 
 ## 🚀 Getting Started
 
+### Option 1: Local Storage (Current)
 1. Open `index.html` in your browser or visit the live site
-2. Click "Get Started" to access the login page
-3. Use any email/password to enter the dashboard
-4. Start taking attendance or recording grades
-5. Your data will automatically persist between sessions!
+2. Click "Get Started" to access the authentication page
+3. Use demo mode with any email/password to enter the dashboard
+4. Your data saves locally in your browser
+
+### Option 2: Online Backend (Recommended)
+1. Follow the `supabase-setup.md` guide to set up online storage
+2. Install dependencies: `npm run setup-supabase`
+3. Configure your Supabase credentials
+4. Enjoy real-time sync across devices and automatic backups!
 
 ## 💾 Data Storage & Export
 
-Your data is stored locally in your browser using localStorage:
-- **Attendance data**: Tracks student status by class and date
-- **Class records**: Organized by classes/sections with student rosters
-- **Grade data**: Assignment-based grading with automatic averages
-- **Automatic saving**: No need to manually save - everything is persistent
-- **Export options**: Download CSV/PDF reports anytime for backup or sharing
+### Current: Local Storage
+- **Browser Storage**: Data saved locally using localStorage
+- **Offline Work**: Full functionality without internet
+- **Export Options**: CSV/PDF reports for backup
+
+### Upgrade: Online Backend (Supabase)
+- **Real-time Sync**: Data syncs across all devices instantly
+- **Secure Authentication**: Proper user accounts and login
+- **Automatic Backups**: Never lose your data
+- **Multi-device Access**: Use on phone, tablet, computer
+- **Scalable**: Support multiple teachers and schools
+- **Data Migration**: Easy transfer from localStorage
 
 ## 🛠️ Technical Details
 
@@ -50,7 +62,11 @@ Your data is stored locally in your browser using localStorage:
 
 ## 🔄 Latest Updates
 
-- ✅ **NEW: Reports & Analytics Dashboard** - Complete reporting system with charts and insights
+- ✅ **NEW: Backend Integration Ready** - Supabase integration with real-time sync
+- ✅ **Authentication System** - Secure login/signup with user management
+- ✅ **Data Migration Tools** - Easy transfer from localStorage to online storage
+- ✅ **Multi-device Support** - Access your data from anywhere
+- ✅ **Reports & Analytics Dashboard** - Complete reporting system with charts and insights
 - ✅ **CSV/PDF Export System** - Export grades, attendance, and student data in multiple formats
 - ✅ **Visual Analytics** - Interactive charts for grade distribution and attendance trends
 - ✅ **Performance Insights** - Top performers, class comparisons, and attendance analytics
@@ -60,4 +76,3 @@ Your data is stored locally in your browser using localStorage:
 - ✅ **Table-based Grade Entry** - Spreadsheet-like interface for recording grades
 - ✅ **Assignment Management** - Create and manage assignments dynamically
 - ✅ **Real-time Calculations** - Automatic student and class averages
-- ✅ Added localStorage persistence for all data

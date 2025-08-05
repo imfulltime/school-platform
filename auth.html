@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication - School Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .auth-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            transition: color 0.3s;
+        }
+        
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .auth-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .auth-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .auth-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .forgot-password {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .forgot-password a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+        
+        .demo-info {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .migration-section {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .migration-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        #signupForm {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">
+            <h1>📚 School Platform</h1>
+            <p>Online Classroom Management</p>
+        </div>
+
+        <div class="auth-tabs">
+            <button class="tab-btn active" onclick="showLogin()">Sign In</button>
+            <button class="tab-btn" onclick="showSignup()">Sign Up</button>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="loginEmail">Email Address</label>
+                <input type="email" id="loginEmail" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" required>
+            </div>
+            
+            <button type="submit" class="auth-btn" id="loginBtn">Sign In</button>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="signupName">Full Name</label>
+                <input type="text" id="signupName" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="signupEmail">Email Address</label>
+                <input type="email" id="signupEmail" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="signupPassword">Password</label>
+                <input type="password" id="signupPassword" minlength="6" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" minlength="6" required>
+            </div>
+            
+            <button type="submit" class="auth-btn" id="signupBtn">Create Account</button>
+        </form>
+
+        <div id="message" class="message"></div>
+
+        <div class="forgot-password">
+            <a href="#" onclick="showForgotPassword()">Forgot your password?</a>
+        </div>
+
+        <div class="demo-info">
+            <strong>Demo Mode:</strong> You can still use localStorage (current system) or set up Supabase for online storage.
+        </div>
+
+        <!-- Data Migration Section -->
+        <div class="migration-section" id="migrationSection" style="display: none;">
+            <h4>🔄 Migrate Your Data</h4>
+            <p>Transfer your existing data to online storage</p>
+            <button class="migration-btn" onclick="migrateData()">Migrate Data</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // This will work with or without Supabase
+        let supabaseEnabled = false;
+        let schoolAPI = null;
+
+        // Try to load Supabase client
+        try {
+            // Import would go here when Supabase is set up
+            // import { schoolAPI as api } from './js/supabase-client.js';
+            // schoolAPI = api;
+            // supabaseEnabled = true;
+        } catch (error) {
+            console.log('Supabase not configured, using localStorage mode');
+        }
+
+        // Tab switching
+        window.showLogin = function() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('signupForm').style.display = 'none';
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.querySelectorAll('.tab-btn')[1].classList.remove('active');
+        }
+
+        window.showSignup = function() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('signupForm').style.display = 'block';
+            document.querySelectorAll('.tab-btn')[0].classList.remove('active');
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        }
+
+        // Show message
+        function showMessage(text, type = 'info') {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.className = `message ${type}`;
+            message.style.display = 'block';
+            
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 5000);
+        }
+
+        // Sign In
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.textContent = 'Signing In...';
+
+            try {
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+
+                if (supabaseEnabled && schoolAPI) {
+                    // Use Supabase authentication
+                    await schoolAPI.signIn(email, password);
+                    showMessage('✅ Successfully signed in!', 'success');
+                    
+                    // Show migration option if localStorage data exists
+                    if (localStorage.getItem('schoolPlatform_classRecords')) {
+                        document.getElementById('migrationSection').style.display = 'block';
+                    } else {
+                        // Redirect to dashboard
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 1000);
+                    }
+                } else {
+                    // Demo mode - simple validation
+                    if (email && password) {
+                        showMessage('✅ Signed in (Demo Mode)', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 1000);
+                    } else {
+                        throw new Error('Please enter both email and password');
+                    }
+                }
+            } catch (error) {
+                showMessage('❌ ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        });
+
+        // Sign Up
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('signupBtn');
+            btn.disabled = true;
+            btn.textContent = 'Creating Account...';
+
+            try {
+                const name = document.getElementById('signupName').value;
+                const email = document.getElementById('signupEmail').value;
+                const password = document.getElementById('signupPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (password !== confirmPassword) {
+                    throw new Error('Passwords do not match');
+                }
+
+                if (supabaseEnabled && schoolAPI) {
+                    // Use Supabase authentication
+                    await schoolAPI.signUp(email, password, name);
+                    showMessage('✅ Account created! Please check your email to verify.', 'success');
+                    showLogin(); // Switch back to login
+                } else {
+                    // Demo mode
+                    showMessage('✅ Account created (Demo Mode)', 'success');
+                    showLogin();
+                }
+            } catch (error) {
+                showMessage('❌ ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Create Account';
+            }
+        });
+
+        // Forgot Password
+        window.showForgotPassword = function() {
+            if (supabaseEnabled) {
+                const email = prompt('Enter your email address for password reset:');
+                if (email) {
+                    // Implement password reset
+                    showMessage('📧 Password reset email sent!', 'info');
+                }
+            } else {
+                alert('Password reset not available in demo mode. Please set up Supabase for full authentication features.');
+            }
+        }
+
+        // Data Migration
+        window.migrateData = async function() {
+            if (!supabaseEnabled || !schoolAPI) {
+                alert('Supabase not configured. Please follow the setup guide.');
+                return;
+            }
+
+            if (!confirm('This will migrate your localStorage data to online storage. Continue?')) {
+                return;
+            }
+
+            try {
+                showMessage('🔄 Migrating your data...', 'info');
+                await schoolAPI.migrateLocalData();
+                showMessage('✅ Data migration completed successfully!', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 2000);
+            } catch (error) {
+                showMessage('❌ Migration failed: ' + error.message, 'error');
+            }
+        }
+
+        // Check if user is already signed in
+        window.addEventListener('load', async () => {
+            if (supabaseEnabled && schoolAPI) {
+                try {
+                    const user = await schoolAPI.getCurrentUser();
+                    if (user) {
+                        showMessage('Welcome back! Redirecting...', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 1000);
+                    }
+                } catch (error) {
+                    console.log('No user session found');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

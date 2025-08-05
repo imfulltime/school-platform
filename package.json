@@ -1,0 +1,24 @@
+{
+  "name": "school-platform",
+  "version": "2.0.0",
+  "description": "Modern classroom management system with online backend integration",
+  "type": "module",
+  "scripts": {
+    "dev": "python -m http.server 8000",
+    "build": "echo 'Building for production...'",
+    "setup-supabase": "npm install @supabase/supabase-js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.53.0"
+  },
+  "keywords": [
+    "education",
+    "classroom-management",
+    "attendance-tracking",
+    "grade-management",
+    "supabase",
+    "realtime"
+  ],
+  "author": "School Platform",
+  "license": "MIT"
+}
