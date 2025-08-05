@@ -468,24 +468,9 @@
             }
         }
 
-        // Handle authentication state changes
-        window.addEventListener('load', () => {
-            if (window.supabaseClient) {
-                window.supabaseClient.auth.onAuthStateChange((event, session) => {
-                    console.log('Auth state changed:', event, session);
-                    
-                    if (event === 'SIGNED_IN' && session) {
-                        sessionStorage.setItem('currentUser', JSON.stringify(session.user));
-                        createUserProfile(session.user);
-                    } else if (event === 'SIGNED_OUT') {
-                        sessionStorage.removeItem('currentUser');
-                        if (window.location.pathname !== '/auth.html') {
-                            window.location.href = 'auth.html';
-                        }
-                    }
-                });
-            }
-        });
+        // Create or update user profile
+        async function createUserProfile(user) {
+            if (!supabaseEnabled || !window.supabaseClient) return;
             
             try {
                 // Check if profile already exists
@@ -530,6 +515,25 @@
                 console.error('Error managing user profile:', error);
             }
         }
+
+        // Handle authentication state changes
+        window.addEventListener('load', () => {
+            if (window.supabaseClient) {
+                window.supabaseClient.auth.onAuthStateChange((event, session) => {
+                    console.log('Auth state changed:', event, session);
+                    
+                    if (event === 'SIGNED_IN' && session) {
+                        sessionStorage.setItem('currentUser', JSON.stringify(session.user));
+                        createUserProfile(session.user);
+                    } else if (event === 'SIGNED_OUT') {
+                        sessionStorage.removeItem('currentUser');
+                        if (window.location.pathname !== '/auth.html') {
+                            window.location.href = 'auth.html';
+                        }
+                    }
+                });
+            }
+        });
 
         // Data Migration
         window.migrateData = async function() {
