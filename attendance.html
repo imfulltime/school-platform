@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracker - School Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            line-height: 1.6;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+            text-decoration: none;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+        }
+        
+        .date-info {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 30px;
+        }
+        
+        /* Controls */
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .class-selector select {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+        }
+        
+        .bulk-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .bulk-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        
+        .bulk-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .mark-all-present {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .mark-all-absent {
+            background: #f44336;
+            color: white;
+        }
+        
+        .clear-all {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .present .stat-number { color: #4CAF50; }
+        .absent .stat-number { color: #f44336; }
+        .tardy .stat-number { color: #ff9800; }
+        .total .stat-number { color: #2196F3; }
+        
+        /* Student Grid */
+        .students-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .student-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        
+        .student-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .student-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .student-photo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .student-info h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+        
+        .student-info p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .status-buttons {
+            display: flex;
+            border-top: 1px solid #eee;
+        }
+        
+        .status-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: #f8f9fa;
+            color: #666;
+        }
+        
+        .status-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .status-btn.present {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .status-btn.absent {
+            background: #f44336;
+            color: white;
+        }
+        
+        .status-btn.tardy {
+            background: #ff9800;
+            color: white;
+        }
+        
+        /* Save Button */
+        .save-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        
+        .save-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .save-btn:hover {
+            transform: translateY(-3px);
+        }
+        
+        .save-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .save-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .bulk-actions {
+                justify-content: center;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .students-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+            <div>
+                <h1>📋 Attendance Tracker</h1>
+                <div class="date-info" id="currentDate"></div>
+            </div>
+            <div></div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Controls -->
+        <div class="controls">
+            <div class="class-selector">
+                <label for="classSelect">Class: </label>
+                <select id="classSelect" onchange="loadClass()">
+                    <option value="math-101">Math 101 - Period 1</option>
+                    <option value="english-201">English 201 - Period 2</option>
+                    <option value="science-301">Science 301 - Period 3</option>
+                    <option value="history-401">History 401 - Period 4</option>
+                </select>
+            </div>
+            
+            <div class="bulk-actions">
+                <button class="bulk-btn mark-all-present" onclick="markAllPresent()">Mark All Present</button>
+                <button class="bulk-btn mark-all-absent" onclick="markAllAbsent()">Mark All Absent</button>
+                <button class="bulk-btn clear-all" onclick="clearAll()">Clear All</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-card present">
+                <div class="stat-number" id="presentCount">0</div>
+                <div class="stat-label">Present</div>
+            </div>
+            <div class="stat-card absent">
+                <div class="stat-number" id="absentCount">0</div>
+                <div class="stat-label">Absent</div>
+            </div>
+            <div class="stat-card tardy">
+                <div class="stat-number" id="tardyCount">0</div>
+                <div class="stat-label">Tardy</div>
+            </div>
+            <div class="stat-card total">
+                <div class="stat-number" id="totalCount">0</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+        </div>
+
+        <!-- Students Grid -->
+        <div class="students-grid" id="studentsGrid">
+            <!-- Students will be populated by JavaScript -->
+        </div>
+
+        <!-- Save Section -->
+        <div class="save-section">
+            <button class="save-btn" onclick="saveAttendance()">💾 Save Attendance</button>
+            <div class="save-status" id="saveStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        // Sample student data (in a real app, this would come from your database)
+        const students = {
+            'math-101': [
+                { id: 1, name: 'Emma Johnson', studentId: 'S001', status: null },
+                { id: 2, name: 'Liam Smith', studentId: 'S002', status: null },
+                { id: 3, name: 'Olivia Brown', studentId: 'S003', status: null },
+                { id: 4, name: 'Noah Davis', studentId: 'S004', status: null },
+                { id: 5, name: 'Ava Wilson', studentId: 'S005', status: null },
+                { id: 6, name: 'Ethan Miller', studentId: 'S006', status: null },
+                { id: 7, name: 'Sophia Garcia', studentId: 'S007', status: null },
+                { id: 8, name: 'Mason Martinez', studentId: 'S008', status: null },
+                { id: 9, name: 'Isabella Lopez', studentId: 'S009', status: null },
+                { id: 10, name: 'William Anderson', studentId: 'S010', status: null },
+                { id: 11, name: 'Mia Taylor', studentId: 'S011', status: null },
+                { id: 12, name: 'James Thomas', studentId: 'S012', status: null }
+            ],
+            'english-201': [
+                { id: 13, name: 'Charlotte Jackson', studentId: 'S013', status: null },
+                { id: 14, name: 'Benjamin White', studentId: 'S014', status: null },
+                { id: 15, name: 'Amelia Harris', studentId: 'S015', status: null },
+                { id: 16, name: 'Lucas Martin', studentId: 'S016', status: null },
+                { id: 17, name: 'Harper Thompson', studentId: 'S017', status: null },
+                { id: 18, name: 'Henry Garcia', studentId: 'S018', status: null }
+            ],
+            'science-301': [
+                { id: 19, name: 'Evelyn Rodriguez', studentId: 'S019', status: null },
+                { id: 20, name: 'Alexander Lewis', studentId: 'S020', status: null },
+                { id: 21, name: 'Abigail Lee', studentId: 'S021', status: null },
+                { id: 22, name: 'Michael Walker', studentId: 'S022', status: null }
+            ],
+            'history-401': [
+                { id: 23, name: 'Emily Hall', studentId: 'S023', status: null },
+                { id: 24, name: 'Daniel Allen', studentId: 'S024', status: null },
+                { id: 25, name: 'Elizabeth Young', studentId: 'S025', status: null }
+            ]
+        };
+
+        let currentClass = 'math-101';
+        let attendanceData = {};
+
+        // Initialize the page
+        function init() {
+            setCurrentDate();
+            loadClass();
+        }
+
+        // Set current date
+        function setCurrentDate() {
+            const today = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            document.getElementById('currentDate').textContent = today.toLocaleDateString('en-US', options);
+        }
+
+        // Load class data
+        function loadClass() {
+            currentClass = document.getElementById('classSelect').value;
+            displayStudents();
+            updateStats();
+        }
+
+        // Display students
+        function displayStudents() {
+            const studentsGrid = document.getElementById('studentsGrid');
+            const classStudents = students[currentClass];
+            
+            studentsGrid.innerHTML = '';
+            
+            classStudents.forEach(student => {
+                const studentCard = createStudentCard(student);
+                studentsGrid.appendChild(studentCard);
+            });
+        }
+
+        // Create student card
+        function createStudentCard(student) {
+            const card = document.createElement('div');
+            card.className = 'student-card';
+            card.innerHTML = `
+                <div class="student-header">
+                    <div class="student-photo">${student.name.charAt(0)}</div>
+                    <div class="student-info">
+                        <h3>${student.name}</h3>
+                        <p>ID: ${student.studentId}</p>
+                    </div>
+                </div>
+                <div class="status-buttons">
+                    <button class="status-btn ${student.status === 'present' ? 'present' : ''}" 
+                            onclick="setStatus(${student.id}, 'present')">
+                        ✓ Present
+                    </button>
+                    <button class="status-btn ${student.status === 'absent' ? 'absent' : ''}" 
+                            onclick="setStatus(${student.id}, 'absent')">
+                        ✗ Absent
+                    </button>
+                    <button class="status-btn ${student.status === 'tardy' ? 'tardy' : ''}" 
+                            onclick="setStatus(${student.id}, 'tardy')">
+                        ⏰ Tardy
+                    </button>
+                </div>
+            `;
+            return card;
+        }
+
+        // Set student status
+        function setStatus(studentId, status) {
+            const classStudents = students[currentClass];
+            const student = classStudents.find(s => s.id === studentId);
+            
+            if (student) {
+                student.status = student.status === status ? null : status;
+                displayStudents();
+                updateStats();
+            }
+        }
+
+        // Update statistics
+        function updateStats() {
+            const classStudents = students[currentClass];
+            const present = classStudents.filter(s => s.status === 'present').length;
+            const absent = classStudents.filter(s => s.status === 'absent').length;
+            const tardy = classStudents.filter(s => s.status === 'tardy').length;
+            const total = classStudents.length;
+
+            document.getElementById('presentCount').textContent = present;
+            document.getElementById('absentCount').textContent = absent;
+            document.getElementById('tardyCount').textContent = tardy;
+            document.getElementById('totalCount').textContent = total;
+        }
+
+        // Bulk actions
+        function markAllPresent() {
+            students[currentClass].forEach(student => {
+                student.status = 'present';
+            });
+            displayStudents();
+            updateStats();
+        }
+
+        function markAllAbsent() {
+            students[currentClass].forEach(student => {
+                student.status = 'absent';
+            });
+            displayStudents();
+            updateStats();
+        }
+
+        function clearAll() {
+            students[currentClass].forEach(student => {
+                student.status = null;
+            });
+            displayStudents();
+            updateStats();
+        }
+
+        // Save attendance
+        function saveAttendance() {
+            const saveStatus = document.getElementById('saveStatus');
+            const today = new Date().toISOString().split('T')[0];
+            
+            // In a real app, you would send this data to your server
+            attendanceData[currentClass] = {
+                date: today,
+                students: students[currentClass].map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    studentId: s.studentId,
+                    status: s.status
+                }))
+            };
+
+            // Show success message
+            saveStatus.className = 'save-status success';
+            saveStatus.style.display = 'block';
+            saveStatus.textContent = '✅ Attendance saved successfully!';
+
+            // Hide message after 3 seconds
+            setTimeout(() => {
+                saveStatus.style.display = 'none';
+            }, 3000);
+
+            console.log('Attendance data saved:', attendanceData);
+        }
+
+        // Initialize when page loads
+        init();
+    </script>
+</body>
+</html>
