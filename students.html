@@ -307,6 +307,25 @@
             color: #333;
             font-size: 1.1em;
         }
+
+        .info-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .info-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .info-input textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
         
         .grade-history-table {
             width: 100%;
@@ -430,6 +449,9 @@
                     <option value="average">Sort by Average</option>
                     <option value="attendance">Sort by Attendance</option>
                 </select>
+                <button onclick="showAddStudentModal()" style="padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-left: 10px;">
+                    ➕ Add Student Profile
+                </button>
             </div>
         </div>
 
@@ -448,6 +470,185 @@
             </div>
             <div class="modal-body" id="modalBody">
                 <!-- Profile content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Student Profile Modal -->
+    <div id="addStudentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Add New Student Profile</h2>
+                <button class="close" onclick="closeAddStudentModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addStudentForm">
+                    <!-- Basic Information -->
+                    <div class="profile-section">
+                        <h3>📋 Basic Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label class="info-label" for="studentName">Full Name *</label>
+                                <input type="text" id="studentName" class="info-input" required>
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="studentId">Student ID *</label>
+                                <input type="text" id="studentId" class="info-input" required>
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="dateOfBirth">Date of Birth</label>
+                                <input type="date" id="dateOfBirth" class="info-input">
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="gender">Gender</label>
+                                <select id="gender" class="info-input">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="profile-section">
+                        <h3>📞 Contact Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label class="info-label" for="phoneNumber">Phone Number</label>
+                                <input type="tel" id="phoneNumber" class="info-input">
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="email">Email Address</label>
+                                <input type="email" id="email" class="info-input">
+                            </div>
+                            <div class="info-item" style="grid-column: 1 / -1;">
+                                <label class="info-label" for="address">Home Address</label>
+                                <textarea id="address" class="info-input" rows="3" placeholder="Enter full address including city, state, zip code"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Parent/Guardian Information -->
+                    <div class="profile-section">
+                        <h3>👨‍👩‍👧‍👦 Parent/Guardian Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label class="info-label" for="parent1Name">Parent/Guardian 1 Name</label>
+                                <input type="text" id="parent1Name" class="info-input">
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="parent1Phone">Phone Number</label>
+                                <input type="tel" id="parent1Phone" class="info-input">
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="parent1Email">Email Address</label>
+                                <input type="email" id="parent1Email" class="info-input">
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="parent1Relation">Relationship</label>
+                                <select id="parent1Relation" class="info-input">
+                                    <option value="">Select Relationship</option>
+                                    <option value="Mother">Mother</option>
+                                    <option value="Father">Father</option>
+                                    <option value="Guardian">Guardian</option>
+                                    <option value="Grandmother">Grandmother</option>
+                                    <option value="Grandfather">Grandfather</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="parent2Name">Parent/Guardian 2 Name</label>
+                                <input type="text" id="parent2Name" class="info-input">
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="parent2Phone">Phone Number</label>
+                                <input type="tel" id="parent2Phone" class="info-input">
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="parent2Email">Email Address</label>
+                                <input type="email" id="parent2Email" class="info-input">
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="parent2Relation">Relationship</label>
+                                <select id="parent2Relation" class="info-input">
+                                    <option value="">Select Relationship</option>
+                                    <option value="Mother">Mother</option>
+                                    <option value="Father">Father</option>
+                                    <option value="Other">Other</option>
+                                    <option value="Guardian">Guardian</option>
+                                    <option value="Grandmother">Grandmother</option>
+                                    <option value="Grandfather">Grandfather</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Academic Information -->
+                    <div class="profile-section">
+                        <h3>📚 Academic Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label class="info-label" for="gradeLevel">Grade Level</label>
+                                <select id="gradeLevel" class="info-input">
+                                    <option value="">Select Grade</option>
+                                    <option value="K">Kindergarten</option>
+                                    <option value="1">1st Grade</option>
+                                    <option value="2">2nd Grade</option>
+                                    <option value="3">3rd Grade</option>
+                                    <option value="4">4th Grade</option>
+                                    <option value="5">5th Grade</option>
+                                    <option value="6">6th Grade</option>
+                                    <option value="7">7th Grade</option>
+                                    <option value="8">8th Grade</option>
+                                    <option value="9">9th Grade</option>
+                                    <option value="10">10th Grade</option>
+                                    <option value="11">11th Grade</option>
+                                    <option value="12">12th Grade</option>
+                                </select>
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="enrollmentDate">Enrollment Date</label>
+                                <input type="date" id="enrollmentDate" class="info-input">
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="primaryClass">Primary Class *</label>
+                                <select id="primaryClass" class="info-input" required>
+                                    <option value="">Select Class</option>
+                                </select>
+                            </div>
+                            <div class="info-item">
+                                <label class="info-label" for="previousSchool">Previous School</label>
+                                <input type="text" id="previousSchool" class="info-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information -->
+                    <div class="profile-section">
+                        <h3>📝 Additional Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item" style="grid-column: 1 / -1;">
+                                <label class="info-label" for="medicalInfo">Medical Information/Allergies</label>
+                                <textarea id="medicalInfo" class="info-input" rows="3" placeholder="Enter any medical conditions, allergies, or special needs"></textarea>
+                            </div>
+                            <div class="info-item" style="grid-column: 1 / -1;">
+                                <label class="info-label" for="notes">Additional Notes</label>
+                                <textarea id="notes" class="info-input" rows="3" placeholder="Any additional information about the student"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 30px;">
+                        <button type="button" onclick="closeAddStudentModal()" style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px;">
+                            Cancel
+                        </button>
+                        <button type="submit" style="padding: 12px 24px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                            ✅ Create Student Profile
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -583,6 +784,32 @@
                     option.textContent = className;
                     classFilter.appendChild(option);
                 });
+
+                // Also populate the Add Student form class dropdown
+                this.populateAddStudentClassFilter();
+            }
+
+            populateAddStudentClassFilter() {
+                const primaryClassSelect = document.getElementById('primaryClass');
+                if (primaryClassSelect) {
+                    primaryClassSelect.innerHTML = '<option value="">Select Class</option>';
+                    
+                    // Get all available classes from the class records
+                    const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
+                    if (savedClassRecords) {
+                        try {
+                            const classes = JSON.parse(savedClassRecords);
+                            Object.keys(classes).sort().forEach(className => {
+                                const option = document.createElement('option');
+                                option.value = className;
+                                option.textContent = className;
+                                primaryClassSelect.appendChild(option);
+                            });
+                        } catch (e) {
+                            console.log('Error loading classes for form:', e);
+                        }
+                    }
+                }
             }
 
             renderStudents() {
@@ -639,6 +866,17 @@
                 const student = this.students.find(s => s.name === name && s.id === id);
                 if (!student) return;
 
+                // Try to get detailed profile information
+                const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles') || '{}';
+                let detailedProfile = null;
+                
+                try {
+                    const profiles = JSON.parse(savedProfiles);
+                    detailedProfile = profiles[id];
+                } catch (e) {
+                    console.log('Error loading detailed profile:', e);
+                }
+
                 const modal = document.getElementById('studentModal');
                 const modalBody = document.getElementById('modalBody');
                 const modalTitle = document.getElementById('modalStudentName');
@@ -649,7 +887,7 @@
                 const attendanceTotal = student.attendance.present + student.attendance.absent + student.attendance.tardy;
                 const attendanceRate = attendanceTotal > 0 ? ((student.attendance.present / attendanceTotal) * 100).toFixed(0) : 0;
 
-                modalBody.innerHTML = `
+                let profileHTML = `
                     <!-- Basic Information -->
                     <div class="profile-section">
                         <h3>📋 Basic Information</h3>
@@ -662,6 +900,18 @@
                                 <div class="info-label">Student ID</div>
                                 <div class="info-value">${student.id}</div>
                             </div>
+                            ${detailedProfile && detailedProfile.dateOfBirth ? `
+                                <div class="info-item">
+                                    <div class="info-label">Date of Birth</div>
+                                    <div class="info-value">${new Date(detailedProfile.dateOfBirth).toLocaleDateString()}</div>
+                                </div>
+                            ` : ''}
+                            ${detailedProfile && detailedProfile.gender ? `
+                                <div class="info-item">
+                                    <div class="info-label">Gender</div>
+                                    <div class="info-value">${detailedProfile.gender}</div>
+                                </div>
+                            ` : ''}
                             <div class="info-item">
                                 <div class="info-label">Overall Average</div>
                                 <div class="info-value">
@@ -673,15 +923,123 @@
                                 <div class="info-value">${student.classes.length}</div>
                             </div>
                         </div>
-                    </div>
+                    </div>`;
 
-                    <!-- Academic Performance -->
+                // Add contact information if available
+                if (detailedProfile && (detailedProfile.phoneNumber || detailedProfile.email || detailedProfile.address)) {
+                    profileHTML += `
+                        <div class="profile-section">
+                            <h3>📞 Contact Information</h3>
+                            <div class="info-grid">
+                                ${detailedProfile.phoneNumber ? `
+                                    <div class="info-item">
+                                        <div class="info-label">Phone Number</div>
+                                        <div class="info-value">${detailedProfile.phoneNumber}</div>
+                                    </div>
+                                ` : ''}
+                                ${detailedProfile.email ? `
+                                    <div class="info-item">
+                                        <div class="info-label">Email Address</div>
+                                        <div class="info-value">${detailedProfile.email}</div>
+                                    </div>
+                                ` : ''}
+                                ${detailedProfile.address ? `
+                                    <div class="info-item" style="grid-column: 1 / -1;">
+                                        <div class="info-label">Home Address</div>
+                                        <div class="info-value">${detailedProfile.address}</div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>`;
+                }
+
+                // Add parent/guardian information if available
+                if (detailedProfile && ((detailedProfile.parent1 && detailedProfile.parent1.name) || (detailedProfile.parent2 && detailedProfile.parent2.name))) {
+                    profileHTML += `
+                        <div class="profile-section">
+                            <h3>👨‍👩‍👧‍👦 Parent/Guardian Information</h3>
+                            <div class="info-grid">`;
+                    
+                    if (detailedProfile.parent1 && detailedProfile.parent1.name) {
+                        profileHTML += `
+                            <div class="info-item">
+                                <div class="info-label">${detailedProfile.parent1.relation || 'Parent/Guardian'} 1</div>
+                                <div class="info-value">${detailedProfile.parent1.name}</div>
+                            </div>
+                            ${detailedProfile.parent1.phone ? `
+                                <div class="info-item">
+                                    <div class="info-label">Phone</div>
+                                    <div class="info-value">${detailedProfile.parent1.phone}</div>
+                                </div>
+                            ` : ''}
+                            ${detailedProfile.parent1.email ? `
+                                <div class="info-item">
+                                    <div class="info-label">Email</div>
+                                    <div class="info-value">${detailedProfile.parent1.email}</div>
+                                </div>
+                            ` : ''}`;
+                    }
+                    
+                    if (detailedProfile.parent2 && detailedProfile.parent2.name) {
+                        profileHTML += `
+                            <div class="info-item">
+                                <div class="info-label">${detailedProfile.parent2.relation || 'Parent/Guardian'} 2</div>
+                                <div class="info-value">${detailedProfile.parent2.name}</div>
+                            </div>
+                            ${detailedProfile.parent2.phone ? `
+                                <div class="info-item">
+                                    <div class="info-label">Phone</div>
+                                    <div class="info-value">${detailedProfile.parent2.phone}</div>
+                                </div>
+                            ` : ''}
+                            ${detailedProfile.parent2.email ? `
+                                <div class="info-item">
+                                    <div class="info-label">Email</div>
+                                    <div class="info-value">${detailedProfile.parent2.email}</div>
+                                </div>
+                            ` : ''}`;
+                    }
+                    
+                    profileHTML += `</div></div>`;
+                }
+
+                // Academic Performance
+                profileHTML += `
                     <div class="profile-section">
                         <h3>📚 Academic Performance</h3>
                         ${this.renderGradeHistory(student)}
-                    </div>
+                    </div>`;
 
-                    <!-- Attendance Record -->
+                // Academic Information if available
+                if (detailedProfile && (detailedProfile.gradeLevel || detailedProfile.enrollmentDate || detailedProfile.previousSchool)) {
+                    profileHTML += `
+                        <div class="profile-section">
+                            <h3>🎓 Academic Information</h3>
+                            <div class="info-grid">
+                                ${detailedProfile.gradeLevel ? `
+                                    <div class="info-item">
+                                        <div class="info-label">Grade Level</div>
+                                        <div class="info-value">${detailedProfile.gradeLevel}</div>
+                                    </div>
+                                ` : ''}
+                                ${detailedProfile.enrollmentDate ? `
+                                    <div class="info-item">
+                                        <div class="info-label">Enrollment Date</div>
+                                        <div class="info-value">${new Date(detailedProfile.enrollmentDate).toLocaleDateString()}</div>
+                                    </div>
+                                ` : ''}
+                                ${detailedProfile.previousSchool ? `
+                                    <div class="info-item">
+                                        <div class="info-label">Previous School</div>
+                                        <div class="info-value">${detailedProfile.previousSchool}</div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>`;
+                }
+
+                // Attendance Record
+                profileHTML += `
                     <div class="profile-section">
                         <h3>📅 Attendance Record</h3>
                         <div class="attendance-grid">
@@ -702,9 +1060,10 @@
                                 <div class="stat-label">Attendance Rate</div>
                             </div>
                         </div>
-                    </div>
+                    </div>`;
 
-                    <!-- Class Enrollment -->
+                // Class Enrollment
+                profileHTML += `
                     <div class="profile-section">
                         <h3>🏫 Class Enrollment</h3>
                         <div class="info-grid">
@@ -715,9 +1074,31 @@
                                 </div>
                             `).join('')}
                         </div>
-                    </div>
-                `;
+                    </div>`;
 
+                // Additional Information if available
+                if (detailedProfile && (detailedProfile.medicalInfo || detailedProfile.notes)) {
+                    profileHTML += `
+                        <div class="profile-section">
+                            <h3>📝 Additional Information</h3>
+                            <div class="info-grid">
+                                ${detailedProfile.medicalInfo ? `
+                                    <div class="info-item" style="grid-column: 1 / -1;">
+                                        <div class="info-label">Medical Information/Allergies</div>
+                                        <div class="info-value">${detailedProfile.medicalInfo}</div>
+                                    </div>
+                                ` : ''}
+                                ${detailedProfile.notes ? `
+                                    <div class="info-item" style="grid-column: 1 / -1;">
+                                        <div class="info-label">Additional Notes</div>
+                                        <div class="info-value">${detailedProfile.notes}</div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>`;
+                }
+
+                modalBody.innerHTML = profileHTML;
                 modal.style.display = 'block';
             }
 
@@ -890,11 +1271,153 @@
             profileSystem.sortStudents();
         }
 
+        // Add Student Profile Functions
+        function showAddStudentModal() {
+            // Populate class dropdown
+            profileSystem.populateAddStudentClassFilter();
+            document.getElementById('addStudentModal').style.display = 'block';
+        }
+
+        function closeAddStudentModal() {
+            document.getElementById('addStudentModal').style.display = 'none';
+            document.getElementById('addStudentForm').reset();
+        }
+
+        // Handle Add Student Form Submission
+        document.getElementById('addStudentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                // Basic Information
+                name: document.getElementById('studentName').value.trim(),
+                id: document.getElementById('studentId').value.trim(),
+                dateOfBirth: document.getElementById('dateOfBirth').value,
+                gender: document.getElementById('gender').value,
+                
+                // Contact Information
+                phoneNumber: document.getElementById('phoneNumber').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                address: document.getElementById('address').value.trim(),
+                
+                // Parent/Guardian Information
+                parent1: {
+                    name: document.getElementById('parent1Name').value.trim(),
+                    phone: document.getElementById('parent1Phone').value.trim(),
+                    email: document.getElementById('parent1Email').value.trim(),
+                    relation: document.getElementById('parent1Relation').value
+                },
+                parent2: {
+                    name: document.getElementById('parent2Name').value.trim(),
+                    phone: document.getElementById('parent2Phone').value.trim(),
+                    email: document.getElementById('parent2Email').value.trim(),
+                    relation: document.getElementById('parent2Relation').value
+                },
+                
+                // Academic Information
+                gradeLevel: document.getElementById('gradeLevel').value,
+                enrollmentDate: document.getElementById('enrollmentDate').value,
+                primaryClass: document.getElementById('primaryClass').value,
+                previousSchool: document.getElementById('previousSchool').value.trim(),
+                
+                // Additional Information
+                medicalInfo: document.getElementById('medicalInfo').value.trim(),
+                notes: document.getElementById('notes').value.trim(),
+                
+                // System fields
+                grades: {},
+                dateCreated: new Date().toISOString()
+            };
+
+            // Validation
+            if (!formData.name || !formData.id || !formData.primaryClass) {
+                alert('❌ Please fill in all required fields (Name, Student ID, and Primary Class)');
+                return;
+            }
+
+            // Check if student ID already exists
+            const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
+            if (savedClassRecords) {
+                try {
+                    const classes = JSON.parse(savedClassRecords);
+                    let existingStudent = false;
+                    
+                    Object.values(classes).forEach(classData => {
+                        if (classData.students.find(s => s.id === formData.id)) {
+                            existingStudent = true;
+                        }
+                    });
+                    
+                    if (existingStudent) {
+                        alert('❌ A student with this ID already exists. Please use a unique Student ID.');
+                        return;
+                    }
+                } catch (e) {
+                    console.log('Error checking existing students:', e);
+                }
+            }
+
+            // Save detailed student profile
+            saveDetailedStudentProfile(formData);
+            
+            // Add student to class records
+            addStudentToClassRecords(formData);
+            
+            // Close modal and refresh
+            closeAddStudentModal();
+            profileSystem.init();
+            
+            alert(`✅ Student profile created successfully!\n\n👤 ${formData.name} has been added to ${formData.primaryClass}\n📋 Full profile details have been saved.`);
+        });
+
+        function saveDetailedStudentProfile(studentData) {
+            // Save to a separate detailed profiles storage
+            const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles') || '{}';
+            let profiles = {};
+            
+            try {
+                profiles = JSON.parse(savedProfiles);
+            } catch (e) {
+                console.log('Error loading student profiles:', e);
+            }
+            
+            profiles[studentData.id] = studentData;
+            localStorage.setItem('schoolPlatform_studentProfiles', JSON.stringify(profiles));
+        }
+
+        function addStudentToClassRecords(studentData) {
+            const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
+            let classes = {};
+            
+            if (savedClassRecords) {
+                try {
+                    classes = JSON.parse(savedClassRecords);
+                } catch (e) {
+                    console.log('Error loading class records:', e);
+                }
+            }
+            
+            // Add student to the selected class
+            if (classes[studentData.primaryClass]) {
+                const basicStudentData = {
+                    name: studentData.name,
+                    id: studentData.id,
+                    grades: {}
+                };
+                
+                classes[studentData.primaryClass].students.push(basicStudentData);
+                localStorage.setItem('schoolPlatform_classRecords', JSON.stringify(classes));
+            }
+        }
+
         // Close modal when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('studentModal');
-            if (event.target === modal) {
+            const studentModal = document.getElementById('studentModal');
+            const addStudentModal = document.getElementById('addStudentModal');
+            
+            if (event.target === studentModal) {
                 closeStudentModal();
+            } else if (event.target === addStudentModal) {
+                closeAddStudentModal();
             }
         }
     </script>

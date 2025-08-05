@@ -331,6 +331,17 @@
                 <button class="action-btn">View Reports</button>
             </div>
 
+            <div class="action-card" style="background: #f0fff4; border: 2px dashed #90EE90;" onclick="quickAddStudent()">
+                <div class="action-header">
+                    <div class="action-icon" style="background: #28a745;">👤+</div>
+                    <div class="action-title">Quick Add Student</div>
+                </div>
+                <div class="action-description">
+                    Quickly add a new student to any of your classes.
+                </div>
+                <button class="action-btn" style="background: #28a745;">Add Student</button>
+            </div>
+
             <div class="action-card" style="background: #fff5f5; border: 2px dashed #ffa8a8;" onclick="manageData()">
                 <div class="action-header">
                     <div class="action-icon" style="background: #ff6b6b;">🗂️</div>
@@ -371,35 +382,24 @@
     <script>
         // Load and display real data from localStorage
         function loadRealData() {
-            const savedStudents = localStorage.getItem('schoolPlatform_students');
-            const savedGrades = localStorage.getItem('schoolPlatform_grades');
-            
             let totalStudents = 0;
             let presentToday = 0;
             let totalGrades = 0;
             let gradeSum = 0;
+            let totalClasses = 0;
             
-            // Count attendance data
-            if (savedStudents) {
-                try {
-                    const students = JSON.parse(savedStudents);
-                    Object.values(students).forEach(classStudents => {
-                        totalStudents += classStudents.length;
-                        presentToday += classStudents.filter(s => s.status === 'present').length;
-                    });
-                } catch (e) {
-                    console.log('Error loading student data:', e);
-                }
-            }
-            
-            // Count grade data from new class record system
+            // Load class records for accurate student and grade counts
             const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
             if (savedClassRecords) {
                 try {
                     const classes = JSON.parse(savedClassRecords);
+                    totalClasses = Object.keys(classes).length;
+                    
                     Object.values(classes).forEach(classData => {
+                        totalStudents += classData.students.length;
+                        
                         classData.students.forEach(student => {
-                            const studentGrades = Object.values(student.grades);
+                            const studentGrades = Object.values(student.grades || {});
                             totalGrades += studentGrades.length;
                             gradeSum += studentGrades.reduce((sum, grade) => sum + grade, 0);
                         });
@@ -409,32 +409,46 @@
                 }
             }
             
-            // Also check old grade system for backward compatibility
-            if (savedGrades) {
+            // Load attendance data for present count
+            const savedAttendance = localStorage.getItem('schoolPlatform_attendance');
+            if (savedAttendance) {
                 try {
-                    const gradeStudents = JSON.parse(savedGrades);
-                    gradeStudents.forEach(student => {
-                        totalGrades += student.grades.length;
-                        gradeSum += student.grades.reduce((sum, grade) => sum + grade.score, 0);
+                    const attendance = JSON.parse(savedAttendance);
+                    Object.values(attendance).forEach(classAttendance => {
+                        if (classAttendance.students) {
+                            presentToday += classAttendance.students.filter(s => s.status === 'present').length;
+                        }
                     });
                 } catch (e) {
-                    console.log('Error loading grade data:', e);
+                    console.log('Error loading attendance data:', e);
                 }
             }
             
-            // Update dashboard stats with real data
-            const classAverage = totalGrades > 0 ? Math.round(gradeSum / totalGrades) : 85;
+            // Calculate accurate class average
+            const classAverage = totalGrades > 0 ? Math.round(gradeSum / totalGrades) : 0;
             
-            // Use real data if available, otherwise use defaults
-            document.querySelector('.stat-card:nth-child(1) .stat-number').textContent = totalStudents || 28;
-            document.querySelector('.stat-card:nth-child(2) .stat-number').textContent = presentToday || 26;
-            document.querySelector('.stat-card:nth-child(3) .stat-number').textContent = totalGrades || 15;
-            document.querySelector('.stat-card:nth-child(4) .stat-number').textContent = classAverage + '%';
+            // Update dashboard stats with real data
+            document.querySelector('.stat-card:nth-child(1) .stat-number').textContent = totalStudents;
+            document.querySelector('.stat-card:nth-child(2) .stat-number').textContent = presentToday;
+            document.querySelector('.stat-card:nth-child(3) .stat-number').textContent = totalGrades;
+            document.querySelector('.stat-card:nth-child(4) .stat-number').textContent = classAverage > 0 ? classAverage + '%' : 'N/A';
+            
+            // Update stat labels for accuracy
+            document.querySelector('.stat-card:nth-child(1) .stat-label').textContent = `Total Students (${totalClasses} classes)`;
+            document.querySelector('.stat-card:nth-child(2) .stat-label').textContent = 'Present Today';
+            document.querySelector('.stat-card:nth-child(3) .stat-label').textContent = 'Total Grades Recorded';
+            document.querySelector('.stat-card:nth-child(4) .stat-label').textContent = 'Overall Average';
             
             // Show data status if we have saved data
-            if (savedStudents || savedGrades || savedClassRecords) {
+            if (savedClassRecords || savedAttendance) {
                 document.getElementById('dataStatus').style.display = 'block';
+                document.getElementById('dataStatus').innerHTML = `
+                    💾 Live Data: ${totalStudents} students, ${totalClasses} classes, ${totalGrades} grades recorded
+                `;
             }
+            
+            // Update recent activity with real data
+            updateRecentActivity();
         }
 
         // Update greeting based on time of day
@@ -524,6 +538,130 @@
             if (confirm('Are you sure you want to logout?')) {
                 window.location.href = 'login.html';
             }
+        }
+
+        // Update recent activity with real data
+        function updateRecentActivity() {
+            const activities = [];
+            const now = new Date();
+            
+            // Check for recent grade entries
+            const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
+            if (savedClassRecords) {
+                try {
+                    const classes = JSON.parse(savedClassRecords);
+                    Object.entries(classes).forEach(([className, classData]) => {
+                        if (classData.assignments && classData.assignments.length > 0) {
+                            const latestAssignment = classData.assignments[classData.assignments.length - 1];
+                            activities.push({
+                                text: `📝 Added assignment "${latestAssignment}" to ${className}`,
+                                time: 'Recently'
+                            });
+                        }
+                    });
+                } catch (e) {
+                    console.log('Error processing recent activities:', e);
+                }
+            }
+            
+            // Check for recent attendance
+            const savedAttendance = localStorage.getItem('schoolPlatform_attendance');
+            if (savedAttendance) {
+                try {
+                    const attendance = JSON.parse(savedAttendance);
+                    Object.entries(attendance).forEach(([className, classData]) => {
+                        if (classData.date) {
+                            const attendanceDate = new Date(classData.date);
+                            const daysDiff = Math.floor((now - attendanceDate) / (1000 * 60 * 60 * 24));
+                            let timeText = daysDiff === 0 ? 'Today' : daysDiff === 1 ? '1 day ago' : `${daysDiff} days ago`;
+                            
+                            activities.push({
+                                text: `✅ Attendance taken for ${className}`,
+                                time: timeText
+                            });
+                        }
+                    });
+                } catch (e) {
+                    console.log('Error processing attendance activities:', e);
+                }
+            }
+            
+            // Update the activity section
+            const activityContainer = document.querySelector('.recent-activity');
+            if (activities.length > 0) {
+                const activityHTML = activities.slice(0, 4).map(activity => `
+                    <div class="activity-item">
+                        <span>${activity.text}</span>
+                        <span class="activity-time">${activity.time}</span>
+                    </div>
+                `).join('');
+                
+                activityContainer.innerHTML = `
+                    <div class="activity-header">
+                        <span style="font-size: 20px;">🕒</span>
+                        <h3>Recent Activity</h3>
+                    </div>
+                    ${activityHTML}
+                `;
+            }
+        }
+
+        // Quick Add Student function
+        function quickAddStudent() {
+            // Get available classes
+            const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
+            let classes = {};
+            
+            if (savedClassRecords) {
+                try {
+                    classes = JSON.parse(savedClassRecords);
+                } catch (e) {
+                    console.log('Error loading classes:', e);
+                }
+            }
+            
+            const classNames = Object.keys(classes);
+            
+            if (classNames.length === 0) {
+                alert('⚠️ No classes found! Please create a class first in the Grade Records section.');
+                return;
+            }
+            
+            // Simple prompt for quick add
+            const studentName = prompt('👤 Enter student name:');
+            if (!studentName) return;
+            
+            const studentId = prompt('🆔 Enter student ID:');
+            if (!studentId) return;
+            
+            // Show class selection
+            let classOptions = classNames.map((name, index) => `${index + 1}. ${name}`).join('\n');
+            const selectedClassIndex = prompt(`📚 Select class:\n${classOptions}\n\nEnter number (1-${classNames.length}):`);
+            
+            const classIndex = parseInt(selectedClassIndex) - 1;
+            if (isNaN(classIndex) || classIndex < 0 || classIndex >= classNames.length) {
+                alert('❌ Invalid class selection');
+                return;
+            }
+            
+            const selectedClassName = classNames[classIndex];
+            
+            // Add student to selected class
+            const newStudent = {
+                name: studentName.trim(),
+                id: studentId.trim(),
+                grades: {}
+            };
+            
+            classes[selectedClassName].students.push(newStudent);
+            
+            // Save updated data
+            localStorage.setItem('schoolPlatform_classRecords', JSON.stringify(classes));
+            
+            // Refresh dashboard
+            loadRealData();
+            
+            alert(`✅ Student "${studentName}" added to "${selectedClassName}"!\n\n💡 Visit Student Profiles to add detailed information like address and parent contacts.`);
         }
 
         // Initialize
