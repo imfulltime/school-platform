@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Supabase Connection Test</h1>
+        <p>This page will help diagnose your Supabase connection issues.</p>
+        
+        <div id="results"></div>
+        
+        <button onclick="testConnection()">🧪 Test Supabase Connection</button>
+        <button onclick="testAuth()">🔐 Test Authentication</button>
+        <button onclick="clearResults()">🗑️ Clear Results</button>
+    </div>
+
+    <script type="module">
+        let supabase = null;
+        let schoolAPI = null;
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            results.appendChild(div);
+        }
+
+        window.testConnection = async function() {
+            addResult('🔄 Testing Supabase connection...', 'info');
+            
+            try {
+                // Test 1: Module Import
+                addResult('Testing module import...', 'info');
+                const module = await import('./js/supabase-client.js');
+                addResult('✅ Module imported successfully', 'success');
+                
+                // Test 2: Supabase Client
+                supabase = module.supabase;
+                schoolAPI = module.schoolAPI;
+                
+                if (supabase) {
+                    addResult('✅ Supabase client created', 'success');
+                } else {
+                    addResult('❌ Supabase client is null', 'error');
+                    return;
+                }
+                
+                // Test 3: Connection Test  
+                addResult('Testing database connection...', 'info');
+                const { data, error } = await supabase.from('profiles').select('count').limit(1);
+                
+                if (error) {
+                    addResult(`❌ Database connection error: ${error.message}`, 'error');
+                } else {
+                    addResult('✅ Database connection successful', 'success');
+                }
+                
+                // Test 4: Auth State
+                addResult('Checking auth state...', 'info');
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (session) {
+                    addResult(`✅ User authenticated: ${session.user.email}`, 'success');
+                } else {
+                    addResult('ℹ️ No active session (this is normal)', 'info');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Connection test failed: ${error.message}`, 'error');
+                console.error('Full error:', error);
+            }
+        }
+
+        window.testAuth = async function() {
+            if (!supabase) {
+                addResult('❌ Please run connection test first', 'error');
+                return;
+            }
+            
+            addResult('🔐 Testing authentication system...', 'info');
+            
+            try {
+                // Test auth methods availability
+                if (typeof supabase.auth.signUp === 'function') {
+                    addResult('✅ signUp method available', 'success');
+                } else {
+                    addResult('❌ signUp method not available', 'error');
+                }
+                
+                if (typeof supabase.auth.signInWithPassword === 'function') {
+                    addResult('✅ signInWithPassword method available', 'success');
+                } else {
+                    addResult('❌ signInWithPassword method not available', 'error');
+                }
+                
+                // Test SchoolAPI
+                if (schoolAPI && typeof schoolAPI.signIn === 'function') {
+                    addResult('✅ SchoolAPI methods available', 'success');
+                } else {
+                    addResult('❌ SchoolAPI not properly initialized', 'error');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Auth test failed: ${error.message}`, 'error');
+            }
+        }
+
+        window.clearResults = function() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Auto-run basic test on load
+        window.addEventListener('load', () => {
+            addResult('🚀 Page loaded, ready for testing', 'info');
+        });
+    </script>
+</body>
+</html>

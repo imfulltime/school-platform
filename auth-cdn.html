@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authentication - School Platform</title>
+    <title>Authentication - School Platform (CDN Version)</title>
     <style>
         * {
             margin: 0;
@@ -155,17 +155,6 @@
             text-decoration: underline;
         }
         
-        .demo-info {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            font-size: 14px;
-            text-align: center;
-            border: 1px solid #f5c6cb;
-        }
-
         .supabase-info {
             background: #d4edda;
             color: #155724;
@@ -175,6 +164,17 @@
             font-size: 14px;
             text-align: center;
             border: 1px solid #c3e6cb;
+        }
+        
+        .demo-info {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: center;
+            border: 1px solid #f5c6cb;
         }
         
         .migration-section {
@@ -205,7 +205,7 @@
     <div class="auth-container">
         <div class="logo">
             <h1>📚 School Platform</h1>
-            <p>Online Classroom Management</p>
+            <p>Online Classroom Management (CDN Version)</p>
         </div>
 
         <div class="auth-tabs">
@@ -275,85 +275,46 @@
         </div>
     </div>
 
-    <script type="module">
-        // This will work with or without Supabase
+    <!-- Load Supabase from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./js/supabase-client-cdn.js"></script>
+    
+    <script>
+        // This will work with CDN version
         let supabaseEnabled = false;
         let schoolAPI = null;
 
         // Initialize Supabase client
         async function initializeSupabase() {
             try {
-                console.log('🔄 Attempting to load Supabase client...');
+                showMessage('🔄 Loading Supabase...', 'info');
                 
-                // Import Supabase client with error details
-                const module = await import('./js/supabase-client.js');
-                console.log('📦 Module loaded:', module);
-                
-                const { schoolAPI: api, supabase } = module;
-                console.log('🔗 API and Supabase extracted:', { api, supabase });
-                
-                if (!api || !supabase) {
-                    throw new Error('Supabase client or API not found in module');
-                }
+                // Wait for CDN to load and initialize
+                const { supabase, schoolAPI: api } = await window.initSupabaseCDN();
                 
                 window.schoolAPI = api;
                 window.supabaseClient = supabase;
                 supabaseEnabled = true;
-                console.log('✅ Supabase client loaded successfully!');
-                
-                // Test the connection
-                try {
-                    const { data, error } = await supabase.from('profiles').select('count').limit(1);
-                    if (error && error.code !== 'PGRST116') { // Ignore "not found" errors
-                        console.warn('⚠️ Database connection warning:', error.message);
-                    } else {
-                        console.log('✅ Database connection test passed');
-                    }
-                } catch (testError) {
-                    console.warn('⚠️ Database test failed:', testError.message);
-                }
+                console.log('✅ Supabase CDN loaded successfully!');
                 
                 // Show secure mode indicator
                 document.getElementById('supabaseInfo').style.display = 'block';
                 document.getElementById('demoInfo').style.display = 'none';
                 
+                showMessage('✅ Secure authentication enabled!', 'success');
+                
                 // Check if user is already authenticated
                 await checkAuthState();
             } catch (error) {
                 console.error('❌ Supabase initialization failed:', error);
-                console.error('Error details:', {
-                    message: error.message,
-                    stack: error.stack,
-                    name: error.name
-                });
-                
                 supabaseEnabled = false;
                 
                 // Show warning that authentication is not available
                 document.getElementById('demoInfo').style.display = 'block';
                 document.getElementById('supabaseInfo').style.display = 'none';
                 
-                // Disable auth forms for security
-                disableAuthForms();
+                showMessage('❌ Authentication failed to load', 'error');
             }
-        }
-
-        // Disable authentication forms when Supabase is not configured
-        function disableAuthForms() {
-            const loginBtn = document.getElementById('loginBtn');
-            const signupBtn = document.getElementById('signupBtn');
-            const forms = document.querySelectorAll('input');
-            
-            loginBtn.disabled = true;
-            signupBtn.disabled = true;
-            loginBtn.textContent = 'Authentication Disabled';
-            signupBtn.textContent = 'Authentication Disabled';
-            
-            forms.forEach(input => {
-                input.disabled = true;
-            });
-            
-            showMessage('⚠️ Authentication disabled. Please configure Supabase for secure access.', 'error');
         }
         
         // Check authentication state
@@ -378,7 +339,9 @@
         }
         
         // Initialize on load
-        initializeSupabase();
+        window.addEventListener('load', () => {
+            initializeSupabase();
+        });
 
         // Tab switching
         window.showLogin = function() {
@@ -428,9 +391,6 @@
                         // Store user data in session
                         sessionStorage.setItem('currentUser', JSON.stringify(user));
                         
-                        // Create or update user profile in profiles table
-                        await createUserProfile(user);
-                        
                         showMessage('✅ Successfully signed in!', 'success');
                         
                         // Show migration option if localStorage data exists
@@ -446,8 +406,7 @@
                         throw new Error('Invalid credentials or authentication failed');
                     }
                 } else {
-                    // No authentication available - SECURITY DISABLED
-                    throw new Error('Authentication is not configured. Please set up Supabase for secure access.');
+                    throw new Error('Authentication is not configured. Please wait for system to load.');
                 }
             } catch (error) {
                 showMessage('❌ ' + error.message, 'error');
@@ -475,26 +434,17 @@
                 }
 
                 if (supabaseEnabled && window.schoolAPI) {
-                    // Use Supabase authentication - SECURE MODE
+                    // Use CDN Supabase authentication
                     const result = await window.schoolAPI.signUp(email, password, name);
                     
                     if (result && (result.user || (result.data && result.data.user))) {
-                        // Store signup data for profile creation after verification
-                        const signupData = {
-                            email: email,
-                            full_name: name,
-                            created_at: new Date().toISOString()
-                        };
-                        sessionStorage.setItem('pendingUserData', JSON.stringify(signupData));
-                        
                         showMessage('✅ Account created! Please check your email to verify your account before signing in.', 'success');
                         showLogin(); // Switch back to login
                     } else {
                         throw new Error('Account creation failed. Please try again.');
                     }
                 } else {
-                    // No authentication available - SECURITY DISABLED
-                    throw new Error('Account creation is not available. Please set up Supabase for secure authentication.');
+                    throw new Error('Account creation is not available. Please wait for system to load.');
                 }
             } catch (error) {
                 showMessage('❌ ' + error.message, 'error');
@@ -511,7 +461,7 @@
                 if (email) {
                     try {
                         const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
-                            redirectTo: window.location.origin + '/auth.html'
+                            redirectTo: window.location.origin + '/auth-cdn.html'
                         });
                         
                         if (error) {
@@ -524,81 +474,14 @@
                     }
                 }
             } else {
-                showMessage('❌ Password reset not available. Secure authentication is not configured.', 'error');
+                showMessage('❌ Password reset not available. Please wait for system to load.', 'error');
             }
         }
-
-        // Create or update user profile
-        async function createUserProfile(user) {
-            if (!supabaseEnabled || !window.supabaseClient) return;
-            
-            try {
-                // Check if profile already exists
-                const { data: existingProfile } = await window.supabaseClient
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', user.id)
-                    .single();
-                
-                if (!existingProfile) {
-                    // Create new profile
-                    const profileData = {
-                        id: user.id,
-                        email: user.email,
-                        full_name: user.user_metadata?.full_name || user.email.split('@')[0],
-                        role: 'teacher',
-                        created_at: new Date().toISOString(),
-                        last_sign_in: new Date().toISOString()
-                    };
-                    
-                    const { error } = await window.supabaseClient
-                        .from('profiles')
-                        .insert(profileData);
-                    
-                    if (error) {
-                        console.error('Error creating profile:', error);
-                    } else {
-                        console.log('✅ User profile created successfully');
-                    }
-                } else {
-                    // Update last sign in
-                    const { error } = await window.supabaseClient
-                        .from('profiles')
-                        .update({ last_sign_in: new Date().toISOString() })
-                        .eq('id', user.id);
-                    
-                    if (error) {
-                        console.error('Error updating profile:', error);
-                    }
-                }
-            } catch (error) {
-                console.error('Error managing user profile:', error);
-            }
-        }
-
-        // Handle authentication state changes
-        window.addEventListener('load', () => {
-            if (window.supabaseClient) {
-                window.supabaseClient.auth.onAuthStateChange((event, session) => {
-                    console.log('Auth state changed:', event, session);
-                    
-                    if (event === 'SIGNED_IN' && session) {
-                        sessionStorage.setItem('currentUser', JSON.stringify(session.user));
-                        createUserProfile(session.user);
-                    } else if (event === 'SIGNED_OUT') {
-                        sessionStorage.removeItem('currentUser');
-                        if (window.location.pathname !== '/auth.html') {
-                            window.location.href = 'auth.html';
-                        }
-                    }
-                });
-            }
-        });
 
         // Data Migration
         window.migrateData = async function() {
             if (!supabaseEnabled || !window.schoolAPI) {
-                alert('Supabase not configured. Please follow the setup guide.');
+                showMessage('❌ Please wait for system to load completely.', 'error');
                 return;
             }
 
@@ -618,8 +501,6 @@
                 showMessage('❌ Migration failed: ' + error.message, 'error');
             }
         }
-
-
     </script>
 </body>
 </html>
