@@ -318,10 +318,7 @@
             <div class="class-selector">
                 <label for="classSelect">Class: </label>
                 <select id="classSelect" onchange="loadClass()">
-                    <option value="math-101">Math 101 - Period 1</option>
-                    <option value="english-201">English 201 - Period 2</option>
-                    <option value="science-301">Science 301 - Period 3</option>
-                    <option value="history-401">History 401 - Period 4</option>
+                    <option value="">Loading classes...</option>
                 </select>
             </div>
             
@@ -365,79 +362,101 @@
     </div>
 
     <script>
-        // Sample student data (in a real app, this would come from your database)
-        const students = {
-            'math-101': [
-                { id: 1, name: 'Emma Johnson', studentId: 'S001', status: null },
-                { id: 2, name: 'Liam Smith', studentId: 'S002', status: null },
-                { id: 3, name: 'Olivia Brown', studentId: 'S003', status: null },
-                { id: 4, name: 'Noah Davis', studentId: 'S004', status: null },
-                { id: 5, name: 'Ava Wilson', studentId: 'S005', status: null },
-                { id: 6, name: 'Ethan Miller', studentId: 'S006', status: null },
-                { id: 7, name: 'Sophia Garcia', studentId: 'S007', status: null },
-                { id: 8, name: 'Mason Martinez', studentId: 'S008', status: null },
-                { id: 9, name: 'Isabella Lopez', studentId: 'S009', status: null },
-                { id: 10, name: 'William Anderson', studentId: 'S010', status: null },
-                { id: 11, name: 'Mia Taylor', studentId: 'S011', status: null },
-                { id: 12, name: 'James Thomas', studentId: 'S012', status: null }
-            ],
-            'english-201': [
-                { id: 13, name: 'Charlotte Jackson', studentId: 'S013', status: null },
-                { id: 14, name: 'Benjamin White', studentId: 'S014', status: null },
-                { id: 15, name: 'Amelia Harris', studentId: 'S015', status: null },
-                { id: 16, name: 'Lucas Martin', studentId: 'S016', status: null },
-                { id: 17, name: 'Harper Thompson', studentId: 'S017', status: null },
-                { id: 18, name: 'Henry Garcia', studentId: 'S018', status: null }
-            ],
-            'science-301': [
-                { id: 19, name: 'Evelyn Rodriguez', studentId: 'S019', status: null },
-                { id: 20, name: 'Alexander Lewis', studentId: 'S020', status: null },
-                { id: 21, name: 'Abigail Lee', studentId: 'S021', status: null },
-                { id: 22, name: 'Michael Walker', studentId: 'S022', status: null }
-            ],
-            'history-401': [
-                { id: 23, name: 'Emily Hall', studentId: 'S023', status: null },
-                { id: 24, name: 'Daniel Allen', studentId: 'S024', status: null },
-                { id: 25, name: 'Elizabeth Young', studentId: 'S025', status: null }
-            ]
-        };
-
-        let currentClass = 'math-101';
+        // Real student data loaded from class records
+        let students = {};
+        let currentClass = '';
         let attendanceData = {};
+        let classRecords = {};
 
         // Initialize the page
         function init() {
             setCurrentDate();
-            loadSavedData();
-            loadClass();
+            loadRealData();
+            populateClassSelector();
+            if (Object.keys(students).length > 0) {
+                currentClass = Object.keys(students)[0];
+                document.getElementById('classSelect').value = currentClass;
+                loadClass();
+            } else {
+                showNoClassesMessage();
+            }
         }
 
-        // Load saved data from localStorage
-        function loadSavedData() {
-            const savedStudents = localStorage.getItem('schoolPlatform_students');
-            const savedAttendance = localStorage.getItem('schoolPlatform_attendance');
-            
-            if (savedStudents) {
+        // Load real data from class records and attendance
+        function loadRealData() {
+            // Load class records
+            const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
+            if (savedClassRecords) {
                 try {
-                    const parsedStudents = JSON.parse(savedStudents);
-                    // Merge saved data with default data
-                    Object.keys(parsedStudents).forEach(classKey => {
-                        if (students[classKey]) {
-                            students[classKey] = parsedStudents[classKey];
-                        }
+                    classRecords = JSON.parse(savedClassRecords);
+                    // Convert class records to attendance format
+                    students = {};
+                    Object.keys(classRecords).forEach(className => {
+                        const classData = classRecords[className];
+                        students[className] = classData.students.map(student => ({
+                            id: student.id,
+                            name: student.name,
+                            studentId: student.id,
+                            status: null
+                        }));
                     });
                 } catch (e) {
-                    console.log('Error loading saved student data:', e);
+                    console.log('Error loading class records:', e);
                 }
             }
-            
+
+            // Load saved attendance data
+            const savedAttendance = localStorage.getItem('schoolPlatform_attendance');
             if (savedAttendance) {
                 try {
                     attendanceData = JSON.parse(savedAttendance);
+                    // Merge saved attendance status with current students
+                    Object.keys(attendanceData).forEach(className => {
+                        if (students[className] && attendanceData[className].students) {
+                            attendanceData[className].students.forEach(savedStudent => {
+                                const currentStudent = students[className].find(s => s.studentId === savedStudent.studentId);
+                                if (currentStudent) {
+                                    currentStudent.status = savedStudent.status;
+                                }
+                            });
+                        }
+                    });
                 } catch (e) {
                     console.log('Error loading saved attendance data:', e);
                 }
             }
+
+            // Load legacy attendance data for backward compatibility
+            const savedStudents = localStorage.getItem('schoolPlatform_students');
+            if (savedStudents) {
+                try {
+                    const legacyStudents = JSON.parse(savedStudents);
+                    // Merge legacy data if we don't have class records yet
+                    if (Object.keys(students).length === 0) {
+                        students = legacyStudents;
+                    }
+                } catch (e) {
+                    console.log('Error loading legacy student data:', e);
+                }
+            }
+        }
+
+        // Populate class selector with real classes
+        function populateClassSelector() {
+            const classSelect = document.getElementById('classSelect');
+            classSelect.innerHTML = '';
+            
+            if (Object.keys(students).length === 0) {
+                classSelect.innerHTML = '<option value="">No classes available</option>';
+                return;
+            }
+
+            Object.keys(students).forEach(className => {
+                const option = document.createElement('option');
+                option.value = className;
+                option.textContent = className;
+                classSelect.appendChild(option);
+            });
         }
 
         // Save data to localStorage
@@ -465,8 +484,32 @@
         // Load class data
         function loadClass() {
             currentClass = document.getElementById('classSelect').value;
+            if (!currentClass) {
+                showNoClassesMessage();
+                return;
+            }
             displayStudents();
             updateStats();
+        }
+
+        // Show message when no classes are available
+        function showNoClassesMessage() {
+            const studentsGrid = document.getElementById('studentsGrid');
+            studentsGrid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #666;">
+                    <div style="font-size: 4em; margin-bottom: 20px; opacity: 0.3;">🏫</div>
+                    <h3>No Classes Found</h3>
+                    <p>Please create classes and add students in the <a href="grades.html" style="color: #667eea;">Class Record System</a> first.</p>
+                    <br>
+                    <a href="grades.html" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Create Classes</a>
+                </div>
+            `;
+            
+            // Hide stats
+            document.getElementById('presentCount').textContent = '0';
+            document.getElementById('absentCount').textContent = '0';
+            document.getElementById('tardyCount').textContent = '0';
+            document.getElementById('totalCount').textContent = '0';
         }
 
         // Display students
@@ -474,8 +517,20 @@
             const studentsGrid = document.getElementById('studentsGrid');
             const classStudents = students[currentClass];
             
-            studentsGrid.innerHTML = '';
+            if (!classStudents || classStudents.length === 0) {
+                studentsGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #666;">
+                        <div style="font-size: 3em; margin-bottom: 15px; opacity: 0.3;">👥</div>
+                        <h3>No Students in This Class</h3>
+                        <p>Add students to <strong>${currentClass}</strong> in the Class Record System.</p>
+                        <br>
+                        <a href="grades.html" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">Add Students</a>
+                    </div>
+                `;
+                return;
+            }
             
+            studentsGrid.innerHTML = '';
             classStudents.forEach(student => {
                 const studentCard = createStudentCard(student);
                 studentsGrid.appendChild(studentCard);
@@ -496,15 +551,15 @@
                 </div>
                 <div class="status-buttons">
                     <button class="status-btn ${student.status === 'present' ? 'present' : ''}" 
-                            onclick="setStatus(${student.id}, 'present')">
+                            onclick="setStatus('${student.studentId}', 'present')">
                         ✓ Present
                     </button>
                     <button class="status-btn ${student.status === 'absent' ? 'absent' : ''}" 
-                            onclick="setStatus(${student.id}, 'absent')">
+                            onclick="setStatus('${student.studentId}', 'absent')">
                         ✗ Absent
                     </button>
                     <button class="status-btn ${student.status === 'tardy' ? 'tardy' : ''}" 
-                            onclick="setStatus(${student.id}, 'tardy')">
+                            onclick="setStatus('${student.studentId}', 'tardy')">
                         ⏰ Tardy
                     </button>
                 </div>
@@ -515,8 +570,9 @@
         // Set student status
         function setStatus(studentId, status) {
             const classStudents = students[currentClass];
-            const student = classStudents.find(s => s.id === studentId);
+            if (!classStudents) return;
             
+            const student = classStudents.find(s => s.studentId === studentId);
             if (student) {
                 student.status = student.status === status ? null : status;
                 displayStudents();
@@ -528,6 +584,14 @@
         // Update statistics
         function updateStats() {
             const classStudents = students[currentClass];
+            if (!classStudents) {
+                document.getElementById('presentCount').textContent = '0';
+                document.getElementById('absentCount').textContent = '0';
+                document.getElementById('tardyCount').textContent = '0';
+                document.getElementById('totalCount').textContent = '0';
+                return;
+            }
+
             const present = classStudents.filter(s => s.status === 'present').length;
             const absent = classStudents.filter(s => s.status === 'absent').length;
             const tardy = classStudents.filter(s => s.status === 'tardy').length;
@@ -541,6 +605,7 @@
 
         // Bulk actions
         function markAllPresent() {
+            if (!students[currentClass]) return;
             students[currentClass].forEach(student => {
                 student.status = 'present';
             });
@@ -550,6 +615,7 @@
         }
 
         function markAllAbsent() {
+            if (!students[currentClass]) return;
             students[currentClass].forEach(student => {
                 student.status = 'absent';
             });
@@ -559,6 +625,7 @@
         }
 
         function clearAll() {
+            if (!students[currentClass]) return;
             students[currentClass].forEach(student => {
                 student.status = null;
             });
@@ -569,6 +636,11 @@
 
         // Save attendance
         function saveAttendance() {
+            if (!currentClass || !students[currentClass]) {
+                alert('Please select a class and ensure it has students before saving attendance.');
+                return;
+            }
+
             const saveStatus = document.getElementById('saveStatus');
             const today = new Date().toISOString().split('T')[0];
             
@@ -589,7 +661,7 @@
             // Show success message
             saveStatus.className = 'save-status success';
             saveStatus.style.display = 'block';
-            saveStatus.textContent = '✅ Attendance saved successfully! Data persists between sessions.';
+            saveStatus.textContent = `✅ Attendance saved for ${currentClass} on ${new Date().toLocaleDateString()}!`;
 
             // Hide message after 3 seconds
             setTimeout(() => {
