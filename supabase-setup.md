@@ -10,11 +10,13 @@
 
 ## Step 2: Database Schema
 
-Run these SQL commands in Supabase SQL Editor:
+**Important**: Run these SQL commands in Supabase SQL Editor (Dashboard → SQL Editor → New Query):
+
+> ⚠️ **Note**: Run the entire script at once, or if you get errors, run each table creation separately in the order shown below.
 
 ```sql
--- Enable Row Level Security
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
+-- Enable UUID extension (if not already enabled)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Teacher profiles table (extends Supabase auth)
 CREATE TABLE teacher_profiles (
@@ -294,3 +296,40 @@ For the School Platform, **Supabase is the clear winner** because:
 3. Migration tools are ready and tested
 4. Free tier covers most school use cases
 5. Can scale to district-level deployment
+
+## 🔧 Troubleshooting Common Issues
+
+### Error: "permission denied to set parameter"
+**Solution**: This is expected in managed Supabase. The updated SQL script above removes the problematic `ALTER DATABASE` command.
+
+### Error: "relation already exists"
+**Solution**: Tables already exist. You can either:
+1. Skip the table creation (tables are already set up)
+2. Drop existing tables first: `DROP TABLE IF EXISTS table_name CASCADE;`
+
+### Error: "function uuid_generate_v4() does not exist"
+**Solution**: Run this first:
+```sql
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+```
+
+### RLS Policies Not Working
+**Solution**: Make sure you're signed in to test. RLS policies only apply to authenticated users. The `auth.uid()` function returns the current user's ID.
+
+### Tables Created But Can't Access Data
+**Solution**: 
+1. Verify RLS is enabled: `SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public';`
+2. Check policies exist: `SELECT * FROM pg_policies WHERE schemaname = 'public';`
+
+### Need to Reset Database
+**Solution**: To start fresh, run this before the main script:
+```sql
+-- Drop all tables (careful - this deletes all data!)
+DROP TABLE IF EXISTS user_data CASCADE;
+DROP TABLE IF EXISTS attendance_records CASCADE;
+DROP TABLE IF EXISTS student_grades CASCADE;
+DROP TABLE IF EXISTS student_enrollments CASCADE;
+DROP TABLE IF EXISTS student_profiles CASCADE;
+DROP TABLE IF EXISTS classes CASCADE;
+DROP TABLE IF EXISTS teacher_profiles CASCADE;
+```
