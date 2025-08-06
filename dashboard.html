@@ -44,6 +44,34 @@
             gap: 15px;
         }
 
+        .profile-avatar-small {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .profile-avatar-small:hover {
+            transform: scale(1.1);
+        }
+
+        .profile-avatar-small img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
         .teacher-profile-btn {
             background: rgba(255,255,255,0.2);
             color: white;
@@ -261,6 +289,7 @@
         <div class="header-content">
             <div class="logo">📚 School Platform</div>
             <div class="user-info">
+                <div class="profile-avatar-small" id="headerProfileAvatar">T</div>
                 <span id="welcomeMessage">Welcome, Teacher</span>
                 <a href="teacher-profile.html" class="teacher-profile-btn">👨‍🏫 My Profile</a>
                 <button class="logout-btn" onclick="logout()">Logout</button>
@@ -570,7 +599,7 @@
 
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
-                window.location.href = 'login.html';
+                window.location.href = 'auth.html';
             }
         }
 
@@ -666,9 +695,43 @@
             window.location.href = 'students.html';
         }
 
+        // Load teacher profile for header display
+        function loadTeacherProfile() {
+            const savedProfile = localStorage.getItem('schoolPlatform_teacherProfile');
+            if (savedProfile) {
+                try {
+                    const profile = JSON.parse(savedProfile);
+                    const avatar = document.getElementById('headerProfileAvatar');
+                    const welcomeMessage = document.getElementById('welcomeMessage');
+                    
+                    // Update welcome message with actual name
+                    const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+                    if (fullName) {
+                        welcomeMessage.textContent = `Welcome, ${fullName}`;
+                    }
+                    
+                    // Update avatar
+                    if (profile.profilePhoto) {
+                        avatar.innerHTML = `<img src="${profile.profilePhoto}" alt="Profile Photo">`;
+                    } else {
+                        const firstInitial = profile.firstName ? profile.firstName.charAt(0).toUpperCase() : '';
+                        const lastInitial = profile.lastName ? profile.lastName.charAt(0).toUpperCase() : '';
+                        const initials = firstInitial + lastInitial || 'T';
+                        avatar.textContent = initials;
+                    }
+                    
+                    // Make avatar clickable to go to profile
+                    avatar.onclick = () => window.location.href = 'teacher-profile.html';
+                } catch (e) {
+                    console.log('Error loading teacher profile:', e);
+                }
+            }
+        }
+
         // Initialize
         updateGreeting();
         loadRealData();
+        loadTeacherProfile();
         
         // Update stats with some animation
         function animateStats() {

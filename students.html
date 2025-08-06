@@ -599,8 +599,8 @@
                         <h3>📚 Academic Information</h3>
                         <div class="info-grid">
                             <div class="info-item">
-                                <label class="info-label" for="gradeLevel">Grade Level</label>
-                                <select id="gradeLevel" class="info-input">
+                                <label class="info-label" for="gradeLevel">Grade Level *</label>
+                                <select id="gradeLevel" class="info-input" required>
                                     <option value="">Select Grade</option>
                                     <option value="K">Kindergarten</option>
                                     <option value="1">1st Grade</option>
@@ -633,14 +633,14 @@
                                 <input type="date" id="enrollmentDate" class="info-input">
                             </div>
                             <div class="info-item">
-                                <label class="info-label" for="primaryClass">Primary Class *</label>
-                                <select id="primaryClass" class="info-input" required>
-                                    <option value="">Select Class</option>
+                                <label class="info-label" for="primaryClass">Primary Class</label>
+                                <select id="primaryClass" class="info-input">
+                                    <option value="">Select Class (Optional)</option>
                                 </select>
                             </div>
                             <div class="info-item">
-                                <label class="info-label" for="section">Section</label>
-                                <input type="text" id="section" class="info-input" placeholder="e.g., A, B, 1, 2">
+                                <label class="info-label" for="section">Section *</label>
+                                <input type="text" id="section" class="info-input" placeholder="e.g., A, B, 1, 2" required>
                             </div>
                             <div class="info-item">
                                 <label class="info-label" for="previousSchool">Previous School</label>
@@ -653,6 +653,15 @@
                     <div class="profile-section">
                         <h3>📝 Additional Information</h3>
                         <div class="info-grid">
+                            <div class="info-item">
+                                <label class="info-label" for="enrollmentStatus">Enrollment Status</label>
+                                <select id="enrollmentStatus" class="info-input">
+                                    <option value="Active">✅ Active</option>
+                                    <option value="Inactive">⏸️ Inactive</option>
+                                    <option value="Graduated">🎓 Graduated</option>
+                                    <option value="Transferred">📤 Transferred</option>
+                                </select>
+                            </div>
                             <div class="info-item" style="grid-column: 1 / -1;">
                                 <label class="info-label" for="medicalInfo">Medical Information/Allergies</label>
                                 <textarea id="medicalInfo" class="info-input" rows="3" placeholder="Enter any medical conditions, allergies, or special needs"></textarea>
@@ -1398,6 +1407,7 @@
                 previousSchool: document.getElementById('previousSchool').value.trim(),
                 
                 // Additional Information
+                enrollmentStatus: document.getElementById('enrollmentStatus').value || 'Active',
                 medicalInfo: document.getElementById('medicalInfo').value.trim(),
                 notes: document.getElementById('notes').value.trim(),
                 
@@ -1407,8 +1417,8 @@
             };
 
             // Validation
-            if (!firstName || !lastName || !formData.id || !formData.primaryClass) {
-                alert('❌ Please fill in all required fields (First Name, Last Name, Student ID, and Primary Class)');
+            if (!firstName || !lastName || !formData.id || !formData.gradeLevel || !formData.section) {
+                alert('❌ Please fill in all required fields (First Name, Last Name, Student ID, Grade Level, and Section)');
                 return;
             }
 

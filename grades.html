@@ -483,18 +483,103 @@
                             <button type="button" class="btn" onclick="addExistingStudent()">Add Selected Student</button>
                         </div>
 
-                        <!-- Manual Student Form -->
-                        <form id="studentForm" style="display: none;">
-                            <div class="form-group">
-                                <label for="studentName">Student Name:</label>
-                                <input type="text" id="studentName" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="studentId">Student ID:</label>
-                                <input type="text" id="studentId" required>
-                            </div>
-                            <button type="submit" class="btn">Add New Student</button>
-                        </form>
+                        <!-- Enhanced Student Profile Form -->
+                        <div id="studentForm" style="display: none;">
+                            <form id="detailedStudentForm">
+                                <!-- Basic Information -->
+                                <div class="form-section">
+                                    <h4 style="color: #667eea; margin-bottom: 15px;">📋 Basic Information</h4>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr 100px; gap: 15px; margin-bottom: 15px;">
+                                        <div class="form-group">
+                                            <label for="newFirstName">First Name *</label>
+                                            <input type="text" id="newFirstName" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="newLastName">Last Name *</label>
+                                            <input type="text" id="newLastName" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="newMiddleInitial">M.I.</label>
+                                            <input type="text" id="newMiddleInitial" maxlength="1" placeholder="M" style="text-transform: uppercase;">
+                                        </div>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                        <div class="form-group">
+                                            <label for="newStudentId">Student ID *</label>
+                                            <input type="text" id="newStudentId" required readonly style="background: #f8f9fa;">
+                                            <small style="color: #666; font-size: 12px;">Auto-generated</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="newDateOfBirth">Date of Birth</label>
+                                            <input type="date" id="newDateOfBirth">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="newGender">Gender</label>
+                                            <select id="newGender">
+                                                <option value="">Select</option>
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Academic Information -->
+                                <div class="form-section">
+                                    <h4 style="color: #667eea; margin-bottom: 15px;">📚 Academic Information</h4>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                        <div class="form-group">
+                                            <label for="newGradeLevel">Grade Level *</label>
+                                            <select id="newGradeLevel" required>
+                                                <option value="">Select Grade</option>
+                                                <option value="K">Kindergarten</option>
+                                                <option value="1">1st Grade</option>
+                                                <option value="2">2nd Grade</option>
+                                                <option value="3">3rd Grade</option>
+                                                <option value="4">4th Grade</option>
+                                                <option value="5">5th Grade</option>
+                                                <option value="6">6th Grade</option>
+                                                <option value="7">7th Grade</option>
+                                                <option value="8">8th Grade</option>
+                                                <option value="9">9th Grade</option>
+                                                <option value="10">10th Grade</option>
+                                                <option value="11">11th Grade</option>
+                                                <option value="12">12th Grade</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="newAcademicYear">Academic Year</label>
+                                            <select id="newAcademicYear">
+                                                <option value="">Select Year</option>
+                                                <option value="2024">2024</option>
+                                                <option value="2025">2025</option>
+                                                <option value="2026">2026</option>
+                                                <option value="2027">2027</option>
+                                                <option value="2028">2028</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="newSection">Section *</label>
+                                            <input type="text" id="newSection" placeholder="e.g., A, B, 1, 2" required>
+                                        </div>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 15px;">
+                                        <div class="form-group">
+                                            <label for="newEnrollmentStatus">Enrollment Status</label>
+                                            <select id="newEnrollmentStatus">
+                                                <option value="Active">✅ Active</option>
+                                                <option value="Inactive">⏸️ Inactive</option>
+                                                <option value="Graduated">🎓 Graduated</option>
+                                                <option value="Transferred">📤 Transferred</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn">Add New Student Profile</button>
+                            </form>
+                        </div>
                     </div>
 
                     <div class="card fade-in">
@@ -559,9 +644,9 @@
                 });
 
                 // Add student form
-                document.getElementById('studentForm').addEventListener('submit', (e) => {
+                document.getElementById('detailedStudentForm').addEventListener('submit', (e) => {
                     e.preventDefault();
-                    this.addStudent();
+                    this.addDetailedStudent();
                 });
             }
 
@@ -660,6 +745,149 @@
                 this.showSuccessMessage(`Student ${name} added to ${this.currentClass}`);
             }
 
+            // Add detailed student with full profile
+            addDetailedStudent() {
+                if (!this.currentClass) {
+                    alert('Please select a class first');
+                    return;
+                }
+
+                // Get form data
+                const firstName = document.getElementById('newFirstName').value.trim();
+                const lastName = document.getElementById('newLastName').value.trim();
+                const middleInitial = document.getElementById('newMiddleInitial').value.trim();
+                const studentId = document.getElementById('newStudentId').value.trim();
+                const dateOfBirth = document.getElementById('newDateOfBirth').value;
+                const gender = document.getElementById('newGender').value;
+                const gradeLevel = document.getElementById('newGradeLevel').value;
+                const academicYear = document.getElementById('newAcademicYear').value;
+                const section = document.getElementById('newSection').value.trim();
+                const enrollmentStatus = document.getElementById('newEnrollmentStatus').value;
+
+                // Validation
+                if (!firstName || !lastName || !studentId || !gradeLevel || !section) {
+                    alert('Please fill in all required fields (First Name, Last Name, Student ID, Grade Level, Section)');
+                    return;
+                }
+
+                const fullName = `${firstName} ${lastName}${middleInitial ? ' ' + middleInitial : ''}`;
+                const currentClassData = this.classes[this.currentClass];
+                
+                // Check for duplicate student ID in this class
+                if (currentClassData.students.find(student => student.id === studentId)) {
+                    alert('Student ID already exists in this class');
+                    return;
+                }
+
+                // Create comprehensive student profile
+                const studentProfile = {
+                    id: studentId,
+                    firstName: firstName,
+                    lastName: lastName,
+                    middleInitial: middleInitial,
+                    name: fullName,
+                    dateOfBirth: dateOfBirth,
+                    gender: gender,
+                    gradeLevel: gradeLevel,
+                    academicYear: academicYear,
+                    section: section,
+                    enrollmentStatus: enrollmentStatus,
+                    email: '',
+                    phone: '',
+                    address: '',
+                    parent1: { name: '', phone: '', email: '', relation: '' },
+                    parent2: { name: '', phone: '', email: '', relation: '' },
+                    enrollmentDate: new Date().toISOString().split('T')[0],
+                    primaryClass: this.currentClass,
+                    previousSchool: '',
+                    medicalInfo: '',
+                    notes: '',
+                    grades: {},
+                    dateCreated: new Date().toISOString()
+                };
+
+                // Add to class
+                const student = {
+                    name: fullName,
+                    id: studentId,
+                    grades: {},
+                    createdAt: new Date().toLocaleDateString()
+                };
+
+                currentClassData.students.push(student);
+
+                // Save to student profiles as well
+                this.saveToStudentProfiles(studentProfile);
+
+                this.saveDataToStorage();
+                this.renderClassRecord();
+                this.updateStatistics();
+                this.clearDetailedStudentForm();
+                this.loadUnassignedStudents(); // Refresh unassigned list
+                this.showSuccessMessage(`Student ${fullName} added to ${this.currentClass} with full profile`);
+            }
+
+            // Save student to profiles database
+            saveToStudentProfiles(studentProfile) {
+                let savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles');
+                let profiles = {};
+                
+                if (savedProfiles) {
+                    try {
+                        profiles = JSON.parse(savedProfiles);
+                    } catch (e) {
+                        console.log('Error loading student profiles:', e);
+                    }
+                }
+
+                profiles[studentProfile.id] = studentProfile;
+                localStorage.setItem('schoolPlatform_studentProfiles', JSON.stringify(profiles));
+            }
+
+            // Generate next student ID
+            generateNextStudentId() {
+                let savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles');
+                let nextId = 1;
+                
+                if (savedProfiles) {
+                    try {
+                        const profiles = JSON.parse(savedProfiles);
+                        const existingIds = Object.keys(profiles).map(id => parseInt(id)).filter(id => !isNaN(id));
+                        if (existingIds.length > 0) {
+                            nextId = Math.max(...existingIds) + 1;
+                        }
+                    } catch (e) {
+                        console.log('Error generating student ID:', e);
+                    }
+                }
+
+                // Also check class records for any student IDs
+                Object.values(this.classes).forEach(classData => {
+                    classData.students.forEach(student => {
+                        const numericId = parseInt(student.id);
+                        if (!isNaN(numericId) && numericId >= nextId) {
+                            nextId = numericId + 1;
+                        }
+                    });
+                });
+
+                return String(nextId).padStart(2, '0');
+            }
+
+            // Clear detailed student form
+            clearDetailedStudentForm() {
+                document.getElementById('newFirstName').value = '';
+                document.getElementById('newLastName').value = '';
+                document.getElementById('newMiddleInitial').value = '';
+                document.getElementById('newStudentId').value = '';
+                document.getElementById('newDateOfBirth').value = '';
+                document.getElementById('newGender').value = '';
+                document.getElementById('newGradeLevel').value = '';
+                document.getElementById('newAcademicYear').value = '';
+                document.getElementById('newSection').value = '';
+                document.getElementById('newEnrollmentStatus').value = 'Active';
+            }
+
             // Load unassigned students from student profiles
             loadUnassignedStudents() {
                 const unassignedSelect = document.getElementById('unassignedStudents');
@@ -686,9 +914,10 @@
                     });
                 });
 
-                // Filter unassigned students
+                // Filter unassigned students (only active students)
                 const unassignedStudents = allStudents.filter(student => 
-                    !assignedStudentIds.has(student.id)
+                    !assignedStudentIds.has(student.id) && 
+                    (student.enrollmentStatus === 'Active' || !student.enrollmentStatus)
                 );
 
                 if (unassignedStudents.length === 0) {
@@ -1057,6 +1286,9 @@
             } else {
                 existingSection.style.display = 'none';
                 manualForm.style.display = 'block';
+                // Auto-generate student ID when manual form is shown
+                const nextId = classSystem.generateNextStudentId();
+                document.getElementById('newStudentId').value = nextId;
             }
         }
 
