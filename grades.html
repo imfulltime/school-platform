@@ -409,14 +409,33 @@
         <div id="createClassForm" class="create-class-form fade-in" style="display: none;">
             <h3>Create New Class</h3>
             <form id="newClassForm">
-                <div style="display: flex; gap: 15px; align-items: end;">
-                    <div class="form-group" style="flex: 1;">
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto auto; gap: 15px; align-items: end;">
+                    <div class="form-group">
                         <label for="className">Class Name:</label>
-                        <input type="text" id="className" placeholder="e.g., Math 101, English 9A" required>
+                        <input type="text" id="className" placeholder="e.g., Mathematics, English Literature" required>
                     </div>
-                    <div class="form-group" style="flex: 1;">
+                    <div class="form-group">
+                        <label for="classYear">Year Level:</label>
+                        <select id="classYear" required>
+                            <option value="">Select Year</option>
+                            <option value="K">Kindergarten</option>
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                            <option value="4">Year 4</option>
+                            <option value="5">Year 5</option>
+                            <option value="6">Year 6</option>
+                            <option value="7">Year 7</option>
+                            <option value="8">Year 8</option>
+                            <option value="9">Year 9</option>
+                            <option value="10">Year 10</option>
+                            <option value="11">Year 11</option>
+                            <option value="12">Year 12</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="classSection">Section:</label>
-                        <input type="text" id="classSection" placeholder="e.g., Period 1, Room 205" required>
+                        <input type="text" id="classSection" placeholder="e.g., A, B, 1, 2" required>
                     </div>
                     <button type="submit" class="btn">Create Class</button>
                     <button type="button" class="btn btn-danger" onclick="hideCreateClassForm()">Cancel</button>
@@ -437,7 +456,35 @@
                 <div class="class-management">
                     <div class="card fade-in">
                         <h2>Add Student to Class</h2>
-                        <form id="studentForm">
+                        
+                        <!-- Student Selection Method -->
+                        <div class="form-group">
+                            <label>Add Student Method:</label>
+                            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                                <label style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="radio" name="addMethod" value="existing" id="addExisting" onchange="toggleAddMethod()" checked>
+                                    Select from Unassigned Students
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="radio" name="addMethod" value="manual" id="addManual" onchange="toggleAddMethod()">
+                                    Add New Student Manually
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Existing Student Selection -->
+                        <div id="existingStudentSection">
+                            <div class="form-group">
+                                <label for="unassignedStudents">Select Unassigned Student:</label>
+                                <select id="unassignedStudents" style="width: 100%; padding: 10px; border: 2px solid #e1e1e1; border-radius: 10px;">
+                                    <option value="">Loading unassigned students...</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn" onclick="addExistingStudent()">Add Selected Student</button>
+                        </div>
+
+                        <!-- Manual Student Form -->
+                        <form id="studentForm" style="display: none;">
                             <div class="form-group">
                                 <label for="studentName">Student Name:</label>
                                 <input type="text" id="studentName" required>
@@ -446,7 +493,7 @@
                                 <label for="studentId">Student ID:</label>
                                 <input type="text" id="studentId" required>
                             </div>
-                            <button type="submit" class="btn">Add Student</button>
+                            <button type="submit" class="btn">Add New Student</button>
                         </form>
                     </div>
 
@@ -542,22 +589,24 @@
 
             createClass() {
                 const className = document.getElementById('className').value.trim();
+                const classYear = document.getElementById('classYear').value.trim();
                 const classSection = document.getElementById('classSection').value.trim();
 
-                if (!className || !classSection) {
+                if (!className || !classYear || !classSection) {
                     alert('Please fill in all fields');
                     return;
                 }
 
-                const classId = `${className} - ${classSection}`;
+                const classId = `${className} - Year ${classYear} - Section ${classSection}`;
                 
                 if (this.classes[classId]) {
-                    alert('A class with this name and section already exists');
+                    alert('A class with this name, year, and section already exists');
                     return;
                 }
 
                 this.classes[classId] = {
                     name: className,
+                    year: classYear,
                     section: classSection,
                     students: [],
                     assignments: [],
@@ -611,6 +660,95 @@
                 this.showSuccessMessage(`Student ${name} added to ${this.currentClass}`);
             }
 
+            // Load unassigned students from student profiles
+            loadUnassignedStudents() {
+                const unassignedSelect = document.getElementById('unassignedStudents');
+                unassignedSelect.innerHTML = '<option value="">Select a student...</option>';
+
+                // Get all students from student profiles
+                const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles');
+                let allStudents = [];
+                
+                if (savedProfiles) {
+                    try {
+                        const profiles = JSON.parse(savedProfiles);
+                        allStudents = Object.values(profiles);
+                    } catch (e) {
+                        console.log('Error loading student profiles:', e);
+                    }
+                }
+
+                // Get all assigned student IDs
+                const assignedStudentIds = new Set();
+                Object.values(this.classes).forEach(classData => {
+                    classData.students.forEach(student => {
+                        assignedStudentIds.add(student.id);
+                    });
+                });
+
+                // Filter unassigned students
+                const unassignedStudents = allStudents.filter(student => 
+                    !assignedStudentIds.has(student.id)
+                );
+
+                if (unassignedStudents.length === 0) {
+                    unassignedSelect.innerHTML = '<option value="">No unassigned students available</option>';
+                    return;
+                }
+
+                // Populate dropdown
+                unassignedStudents.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = JSON.stringify({id: student.id, name: student.name});
+                    option.textContent = `${student.name} (ID: ${student.id})`;
+                    unassignedSelect.appendChild(option);
+                });
+            }
+
+            // Add existing student to current class
+            addExistingStudent() {
+                if (!this.currentClass) {
+                    alert('Please select a class first');
+                    return;
+                }
+
+                const unassignedSelect = document.getElementById('unassignedStudents');
+                const selectedValue = unassignedSelect.value;
+
+                if (!selectedValue) {
+                    alert('Please select a student');
+                    return;
+                }
+
+                try {
+                    const studentData = JSON.parse(selectedValue);
+                    const currentClassData = this.classes[this.currentClass];
+
+                    // Check if student is already in this class
+                    if (currentClassData.students.find(student => student.id === studentData.id)) {
+                        alert('Student is already in this class');
+                        return;
+                    }
+
+                    const student = {
+                        name: studentData.name,
+                        id: studentData.id,
+                        grades: {},
+                        createdAt: new Date().toLocaleDateString()
+                    };
+
+                    currentClassData.students.push(student);
+                    this.saveDataToStorage();
+                    this.renderClassRecord();
+                    this.updateStatistics();
+                    this.loadUnassignedStudents(); // Refresh the unassigned list
+                    this.showSuccessMessage(`Student ${studentData.name} added to ${this.currentClass}`);
+                } catch (e) {
+                    alert('Error adding student. Please try again.');
+                    console.error('Error parsing student data:', e);
+                }
+            }
+
             populateClassSelector() {
                 const selector = document.getElementById('classSelect');
                 selector.innerHTML = '<option value="">Choose a class...</option>';
@@ -639,6 +777,7 @@
                 
                 this.renderClassRecord();
                 this.updateStatistics();
+                this.loadUnassignedStudents(); // Load available students
             }
 
             renderClassRecord() {
@@ -850,6 +989,7 @@
             hideCreateClassForm() {
                 document.getElementById('createClassForm').style.display = 'none';
                 document.getElementById('className').value = '';
+                document.getElementById('classYear').value = '';
                 document.getElementById('classSection').value = '';
             }
 
@@ -900,6 +1040,24 @@
 
         function saveAllGrades() {
             classSystem.saveAllGrades();
+        }
+
+        function addExistingStudent() {
+            classSystem.addExistingStudent();
+        }
+
+        function toggleAddMethod() {
+            const existingRadio = document.getElementById('addExisting');
+            const existingSection = document.getElementById('existingStudentSection');
+            const manualForm = document.getElementById('studentForm');
+
+            if (existingRadio.checked) {
+                existingSection.style.display = 'block';
+                manualForm.style.display = 'none';
+            } else {
+                existingSection.style.display = 'none';
+                manualForm.style.display = 'block';
+            }
         }
 
         // Add CSS animations

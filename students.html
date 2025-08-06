@@ -618,6 +618,17 @@
                                 </select>
                             </div>
                             <div class="info-item">
+                                <label class="info-label" for="academicYear">Academic Year</label>
+                                <select id="academicYear" class="info-input">
+                                    <option value="">Select Academic Year</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2026">2026</option>
+                                    <option value="2027">2027</option>
+                                    <option value="2028">2028</option>
+                                </select>
+                            </div>
+                            <div class="info-item">
                                 <label class="info-label" for="enrollmentDate">Enrollment Date</label>
                                 <input type="date" id="enrollmentDate" class="info-input">
                             </div>
@@ -1380,6 +1391,7 @@
                 
                 // Academic Information
                 gradeLevel: document.getElementById('gradeLevel').value,
+                academicYear: document.getElementById('academicYear').value,
                 enrollmentDate: document.getElementById('enrollmentDate').value,
                 primaryClass: document.getElementById('primaryClass').value,
                 section: document.getElementById('section').value.trim(),
