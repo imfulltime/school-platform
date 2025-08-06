@@ -2,6 +2,8 @@
 
 A modern, responsive web application for classroom management. Track attendance, manage grades, and monitor student progress - all with persistent data storage.
 
+> **🔄 Project Restored**: We've successfully restored the working version of the School Platform with all features intact!
+
 ## ✨ Features
 
 ### ✅ Implemented
