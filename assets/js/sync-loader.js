@@ -146,7 +146,11 @@
         window.syncService = SyncService;
         
         // Initialize sync service
-        await SyncService.initialize();
+        try {
+            await SyncService.initialize();
+        } catch (error) {
+            console.warn('⚠️ Failed to initialize sync service:', error);
+        }
         
         // Listen for data loaded events to refresh pages
         window.addEventListener('dataLoaded', () => {

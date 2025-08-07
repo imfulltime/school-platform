@@ -979,6 +979,40 @@
                     }
                 });
 
+                // Load detailed student profiles and merge them
+                const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles');
+                if (savedProfiles) {
+                    try {
+                        const detailedProfiles = JSON.parse(savedProfiles);
+                        Object.values(detailedProfiles).forEach(detailedProfile => {
+                            const key = `${detailedProfile.name}_${detailedProfile.id}`;
+                            
+                            if (studentMap.has(key)) {
+                                // Merge detailed profile data with existing profile
+                                const profile = studentMap.get(key);
+                                Object.assign(profile, detailedProfile);
+                                // Preserve the compiled classes array
+                                if (!profile.classes || profile.classes.length === 0) {
+                                    profile.classes = detailedProfile.primaryClass ? [detailedProfile.primaryClass] : [];
+                                }
+                            } else {
+                                // Add new detailed profile that isn't in any class yet
+                                const newProfile = {
+                                    ...detailedProfile,
+                                    classes: detailedProfile.primaryClass ? [detailedProfile.primaryClass] : [],
+                                    grades: {},
+                                    attendance: { present: 0, absent: 0, tardy: 0 },
+                                    totalGrades: 0,
+                                    gradeSum: 0
+                                };
+                                studentMap.set(key, newProfile);
+                            }
+                        });
+                    } catch (e) {
+                        console.log('Error loading detailed student profiles:', e);
+                    }
+                }
+
                 this.students = Array.from(studentMap.values());
             }
 
@@ -1723,11 +1757,24 @@
 
         // Add Student Profile Functions
         function showAddStudentModal() {
+            // Reset form first
+            document.getElementById('addStudentForm').reset();
+            
+            // Reset photo if function exists
+            if (typeof deletePhoto === 'function') {
+                deletePhoto();
+            }
+            
             // Populate class dropdown
             profileSystem.populateAddStudentClassFilter();
             
             // Generate next student ID
             generateNextStudentId();
+            
+            // Set default values
+            document.getElementById('enrollmentStatus').value = 'Active';
+            const currentYear = new Date().getFullYear();
+            document.getElementById('academicYear').value = currentYear + '-' + (currentYear + 1);
             
             document.getElementById('addStudentModal').style.display = 'block';
         }
@@ -1760,6 +1807,14 @@
         function closeAddStudentModal() {
             document.getElementById('addStudentModal').style.display = 'none';
             document.getElementById('addStudentForm').reset();
+            
+            // Reset photo upload
+            if (typeof deletePhoto === 'function') {
+                deletePhoto();
+            }
+            
+            // Generate new student ID for next use
+            generateStudentId();
         }
 
         // Handle Add Student Form Submission
@@ -1831,7 +1886,13 @@
 
             // Validation
             if (!firstName || !lastName || !formData.id || !formData.gradeLevel || !formData.section) {
-                alert('❌ Please fill in all required fields (First Name, Last Name, Student ID, Grade Level, and Section)');
+                alert('❌ Please fill in all required fields:\n• First Name\n• Last Name\n• Student ID\n• Grade Level\n• Section');
+                return;
+            }
+
+            // Validate Student ID format
+            if (!/^\d{2,}$/.test(formData.id)) {
+                alert('❌ Student ID must be a number with at least 2 digits');
                 return;
             }
 
@@ -1867,7 +1928,20 @@
             closeAddStudentModal();
             profileSystem.init();
             
-            alert(`✅ Student profile created successfully!\n\n👤 ${formData.name} has been added to ${formData.primaryClass}\n📋 Full profile details have been saved.`);
+            // Show appropriate success message
+            let successMessage = `✅ Student profile created successfully!\n\n👤 ${formData.name}\n📋 Student ID: ${formData.id}`;
+            
+            if (formData.primaryClass) {
+                successMessage += `\n🏫 Added to class: ${formData.primaryClass}`;
+            } else {
+                successMessage += `\n📝 Profile saved (no class assigned yet)`;
+            }
+            
+            if (formData.photo) {
+                successMessage += `\n📷 Profile photo uploaded`;
+            }
+            
+            alert(successMessage);
         });
 
         function saveDetailedStudentProfile(studentData) {
@@ -1897,16 +1971,27 @@
                 }
             }
             
-            // Add student to the selected class
-            if (classes[studentData.primaryClass]) {
+            // Add student to the selected class (only if a class is selected)
+            if (studentData.primaryClass && classes[studentData.primaryClass]) {
                 const basicStudentData = {
                     name: studentData.name,
                     id: studentData.id,
                     grades: {}
                 };
                 
-                classes[studentData.primaryClass].students.push(basicStudentData);
-                localStorage.setItem('schoolPlatform_classRecords', JSON.stringify(classes));
+                // Check if student is already in this class
+                const existingStudent = classes[studentData.primaryClass].students.find(s => s.id === studentData.id);
+                if (!existingStudent) {
+                    classes[studentData.primaryClass].students.push(basicStudentData);
+                    localStorage.setItem('schoolPlatform_classRecords', JSON.stringify(classes));
+                    console.log(`✅ Student ${studentData.name} added to class ${studentData.primaryClass}`);
+                } else {
+                    console.log(`ℹ️ Student ${studentData.name} already exists in class ${studentData.primaryClass}`);
+                }
+            } else if (studentData.primaryClass && !classes[studentData.primaryClass]) {
+                console.log(`⚠️ Class "${studentData.primaryClass}" not found. Student profile saved but not added to any class.`);
+            } else {
+                console.log(`ℹ️ No class selected. Student profile saved without class assignment.`);
             }
         }
 
