@@ -424,6 +424,145 @@
             background: #5a6268;
         }
 
+        /* Multi-Select Student Styles */
+        .multi-select-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            margin-bottom: 15px;
+        }
+
+        .student-checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .student-checkbox-item:hover {
+            border-color: #667eea;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .student-checkbox-item.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .student-checkbox {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .student-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .student-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .student-details {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        .multi-select-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn.small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .selected-count {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .loading-message {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Custom Category Styles */
+        .config-toggle {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .custom-category-form {
+            background: #f0f8ff;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .custom-category-form h4 {
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .icon-selector {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .icon-selector:hover {
+            background: #667eea;
+            transform: scale(1.1);
+        }
+
+        .weight-item.custom {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border: 2px solid #667eea;
+        }
+
+        .weight-item.custom .remove-category {
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
         @media (max-width: 768px) {
             .class-management {
                 grid-template-columns: 1fr;
@@ -555,12 +694,17 @@
                         <!-- Existing Student Selection -->
                         <div id="existingStudentSection">
                             <div class="form-group">
-                                <label for="unassignedStudents">Select Unassigned Student:</label>
-                                <select id="unassignedStudents" style="width: 100%; padding: 10px; border: 2px solid #e1e1e1; border-radius: 10px;">
-                                    <option value="">Loading unassigned students...</option>
-                                </select>
+                                <label for="unassignedStudents">Select Unassigned Students (Multiple):</label>
+                                <div id="unassignedStudentsContainer" class="multi-select-container">
+                                    <div class="loading-message">Loading unassigned students...</div>
+                                </div>
+                                <div class="multi-select-actions">
+                                    <button type="button" class="btn secondary small" onclick="selectAllUnassigned()">✅ Select All</button>
+                                    <button type="button" class="btn secondary small" onclick="clearAllUnassigned()">❌ Clear All</button>
+                                    <span id="selectedCount" class="selected-count">0 selected</span>
+                                </div>
                             </div>
-                            <button type="button" class="btn" onclick="addExistingStudent()">Add Selected Student</button>
+                            <button type="button" class="btn" onclick="addSelectedStudents()">➕ Add Selected Students</button>
                         </div>
 
                         <!-- Enhanced Student Profile Form -->
@@ -672,28 +816,50 @@
                             </div>
                             
                             <div id="assessmentWeights" class="assessment-weights">
-                                <div class="weight-grid">
-                                    <div class="weight-item">
+                                <div class="config-toggle">
+                                    <button type="button" class="btn secondary small" onclick="toggleConfigMode()">
+                                        <span id="configModeText">➕ Add Custom Category</span>
+                                    </button>
+                                </div>
+                                
+                                <div class="weight-grid" id="weightGrid">
+                                    <div class="weight-item" data-category="Quiz">
                                         <label for="quizWeight">🧠 Quizzes</label>
                                         <input type="number" id="quizWeight" min="0" max="100" value="20" onchange="updateWeights()">
                                         <span>%</span>
                                     </div>
-                                    <div class="weight-item">
+                                    <div class="weight-item" data-category="Exam">
                                         <label for="examWeight">📝 Exams</label>
                                         <input type="number" id="examWeight" min="0" max="100" value="40" onchange="updateWeights()">
                                         <span>%</span>
                                     </div>
-                                    <div class="weight-item">
+                                    <div class="weight-item" data-category="Project">
                                         <label for="projectWeight">💼 Projects</label>
                                         <input type="number" id="projectWeight" min="0" max="100" value="25" onchange="updateWeights()">
                                         <span>%</span>
                                     </div>
-                                    <div class="weight-item">
+                                    <div class="weight-item" data-category="Assignment">
                                         <label for="assignmentWeight">📋 Assignments</label>
                                         <input type="number" id="assignmentWeight" min="0" max="100" value="15" onchange="updateWeights()">
                                         <span>%</span>
                                     </div>
                                 </div>
+
+                                <!-- Custom Category Addition -->
+                                <div id="customCategoryForm" class="custom-category-form" style="display: none;">
+                                    <h4>➕ Add Custom Assessment Category</h4>
+                                    <div style="display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: center; margin-bottom: 15px;">
+                                        <button type="button" id="iconSelector" class="icon-selector" onclick="selectRandomIcon()">🎯</button>
+                                        <input type="text" id="customCategoryName" placeholder="Enter category name (e.g., Lab Work, Participation)" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                                        <input type="number" id="customCategoryWeight" min="0" max="100" value="10" style="width: 60px; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                                        <span>%</span>
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <button type="button" class="btn small" onclick="addCustomCategory()">➕ Add Category</button>
+                                        <button type="button" class="btn secondary small" onclick="cancelCustomCategory()">❌ Cancel</button>
+                                    </div>
+                                </div>
+
                                 <div class="total-weight">
                                     Total: <span id="totalWeight">100</span>%
                                     <span id="weightError" style="color: red; display: none;">⚠️ Total must equal 100%</span>
@@ -718,8 +884,13 @@
                                 </div>
                                 <div style="margin-top: 10px;">
                                     <strong>Assessment Name:</strong>
-                                    <input type="text" id="assignmentName" placeholder="Enter assessment name" style="margin-left: 10px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 5px;">
-                                    <button class="add-assignment" onclick="addAssignmentColumn()">➕ Add Assessment</button>
+                                    <input type="text" id="assignmentName" placeholder="Enter assessment name" style="margin-left: 10px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 5px; width: 200px;">
+                                </div>
+                                <div style="margin-top: 10px;">
+                                    <strong>Total Points:</strong>
+                                    <input type="number" id="assignmentPoints" placeholder="100" min="1" max="1000" value="100" style="margin-left: 10px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 5px; width: 80px;">
+                                    <span style="color: #666; margin-left: 5px;">points</span>
+                                    <button class="add-assignment" onclick="addAssignmentColumn()" style="margin-left: 15px;">➕ Add Assessment</button>
                                 </div>
                             </div>
                             <div class="header-actions">
@@ -1032,10 +1203,10 @@
                 document.getElementById('newEnrollmentStatus').value = 'Active';
             }
 
-            // Load unassigned students from student profiles
+            // Load unassigned students from student profiles with multi-select
             loadUnassignedStudents() {
-                const unassignedSelect = document.getElementById('unassignedStudents');
-                unassignedSelect.innerHTML = '<option value="">Select a student...</option>';
+                const container = document.getElementById('unassignedStudentsContainer');
+                container.innerHTML = '<div class="loading-message">Loading unassigned students...</div>';
 
                 // Get all students from student profiles
                 const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles');
@@ -1066,17 +1237,51 @@
                 );
 
                 if (unassignedStudents.length === 0) {
-                    unassignedSelect.innerHTML = '<option value="">No unassigned students available</option>';
+                    container.innerHTML = `
+                        <div class="loading-message">
+                            <div style="font-size: 2em; margin-bottom: 10px;">✅</div>
+                            No unassigned students available<br>
+                            <small>All active students are already enrolled in this class</small>
+                        </div>
+                    `;
+                    this.updateSelectedCount();
                     return;
                 }
 
-                // Populate dropdown
-                unassignedStudents.forEach(student => {
-                    const option = document.createElement('option');
-                    option.value = JSON.stringify({id: student.id, name: student.name});
-                    option.textContent = `${student.name} (ID: ${student.id})`;
-                    unassignedSelect.appendChild(option);
-                });
+                // Create checkbox interface
+                const checkboxHTML = unassignedStudents.map(student => {
+                    const studentName = student.name || `${student.firstName} ${student.lastName}`;
+                    const studentData = {
+                        name: studentName,
+                        id: student.id,
+                        gradeLevel: student.gradeLevel,
+                        section: student.section
+                    };
+                    
+                    return `
+                        <div class="student-checkbox-item" onclick="toggleStudentSelection('${student.id}')">
+                            <input type="checkbox" class="student-checkbox" id="student_${student.id}" 
+                                   data-student='${JSON.stringify(studentData)}' 
+                                   onchange="updateSelectedCount()">
+                            <div class="student-info">
+                                <div class="student-name">${studentName}</div>
+                                <div class="student-details">ID: ${student.id} • Grade ${student.gradeLevel || 'N/A'} • Section ${student.section || 'N/A'}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = checkboxHTML;
+                this.updateSelectedCount();
+            }
+
+            updateSelectedCount() {
+                const checkboxes = document.querySelectorAll('.student-checkbox');
+                const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+                const countElement = document.getElementById('selectedCount');
+                if (countElement) {
+                    countElement.textContent = `${selectedCount} selected`;
+                }
             }
 
             // Add existing student to current class
@@ -1170,16 +1375,22 @@
                     return;
                 }
 
-                // Build table
+                // Build table with points display
                 let tableHTML = `
                     <table class="class-record-table">
                         <thead>
                             <tr>
                                 <th>Student Name</th>
                                 <th>Student ID</th>
-                                ${classData.assignments.map(assignment => 
-                                    `<th>${assignment} <button onclick="classSystem.removeAssignment('${assignment}')" style="background: #ff4444; color: white; border: none; border-radius: 3px; padding: 2px 6px; margin-left: 5px; cursor: pointer;">×</button></th>`
-                                ).join('')}
+                                ${classData.assignments.map(assignment => {
+                                    const meta = classData.assignmentMeta?.[assignment];
+                                    const totalPoints = meta?.totalPoints || 100;
+                                    return `<th style="text-align: center;">
+                                        <div style="font-weight: bold; margin-bottom: 2px;">${assignment}</div>
+                                        <div style="font-size: 11px; color: #666;">/ ${totalPoints} pts</div>
+                                        <button onclick="classSystem.removeAssignment('${assignment}')" style="background: #ff4444; color: white; border: none; border-radius: 3px; padding: 2px 6px; margin-top: 3px; cursor: pointer; font-size: 10px;">×</button>
+                                    </th>`;
+                                }).join('')}
                                 <th>Average</th>
                                 <th>Actions</th>
                             </tr>
@@ -1199,11 +1410,38 @@
                             <td>
                                 <div class="student-id">${student.id}</div>
                             </td>
-                            ${classData.assignments.map(assignment => 
-                                `<td><input type="number" class="grade-input" min="0" max="100" placeholder="--" 
-                                    value="${student.grades[assignment] || ''}" 
-                                    onchange="classSystem.updateGrade('${student.id}', '${assignment}', this.value)"></td>`
-                            ).join('')}
+                            ${classData.assignments.map(assignment => {
+                                const meta = classData.assignmentMeta?.[assignment];
+                                const totalPoints = meta?.totalPoints || 100;
+                                const studentGrade = student.grades[assignment];
+                                
+                                // Handle both old format (number) and new format (object)
+                                let currentPoints = 0;
+                                let currentPercentage = 0;
+                                
+                                if (typeof studentGrade === 'object' && studentGrade !== null) {
+                                    currentPoints = studentGrade.points || 0;
+                                    currentPercentage = studentGrade.percentage || 0;
+                                } else if (typeof studentGrade === 'number') {
+                                    // Legacy format - assume it's a percentage, convert to points
+                                    currentPercentage = studentGrade;
+                                    currentPoints = Math.round((studentGrade / 100) * totalPoints);
+                                }
+                                
+                                return `<td style="text-align: center;">
+                                    <div style="display: flex; flex-direction: column; align-items: center;">
+                                        <input type="number" class="grade-input points-input" 
+                                               min="0" max="${totalPoints}" placeholder="0" 
+                                               value="${currentPoints || ''}" 
+                                               style="width: 60px; text-align: center; margin-bottom: 2px;"
+                                               onchange="classSystem.updatePointsGrade('${student.id}', '${assignment}', this.value, ${totalPoints})"
+                                               title="Enter points earned">
+                                        <div style="font-size: 10px; color: #666;">
+                                            ${currentPercentage > 0 ? currentPercentage.toFixed(1) + '%' : '--'}
+                                        </div>
+                                    </div>
+                                </td>`;
+                            }).join('')}
                             <td>
                                 <div class="average-display ${averageClass}">
                                     ${average > 0 ? average.toFixed(1) + '%' : '--'}
@@ -1288,6 +1526,35 @@
                 }
             }
 
+            // New points-based grade update function
+            updatePointsGrade(studentId, assignment, points, totalPoints) {
+                const classData = this.classes[this.currentClass];
+                const student = classData.students.find(s => s.id === studentId);
+                
+                if (student) {
+                    const numericPoints = parseFloat(points) || 0;
+                    
+                    if (points === '' || points === null) {
+                        // Clear the grade
+                        delete student.grades[assignment];
+                    } else if (numericPoints >= 0 && numericPoints <= totalPoints) {
+                        // Calculate percentage automatically
+                        const percentage = totalPoints > 0 ? (numericPoints / totalPoints) * 100 : 0;
+                        
+                        // Store both points and percentage
+                        student.grades[assignment] = {
+                            points: numericPoints,
+                            totalPoints: totalPoints,
+                            percentage: percentage
+                        };
+                    }
+                    
+                    this.saveDataToStorage();
+                    this.renderClassRecord(); // Re-render to show updated percentage
+                    this.updateStatistics();
+                }
+            }
+
             removeStudent(studentId) {
                 if (!confirm('Are you sure you want to remove this student?')) {
                     return;
@@ -1304,8 +1571,23 @@
             calculateStudentAverage(student) {
                 const grades = Object.values(student.grades);
                 if (grades.length === 0) return 0;
-                const sum = grades.reduce((acc, grade) => acc + grade, 0);
-                return sum / grades.length;
+                
+                // Handle both old format (numbers) and new format (objects with points/percentage)
+                const percentages = grades.map(grade => {
+                    if (typeof grade === 'object' && grade !== null) {
+                        // New format: use calculated percentage
+                        return grade.percentage || 0;
+                    } else if (typeof grade === 'number') {
+                        // Old format: assume it's already a percentage
+                        return grade;
+                    }
+                    return 0;
+                }).filter(p => p > 0); // Only include grades that have been entered
+                
+                if (percentages.length === 0) return 0;
+                
+                const sum = percentages.reduce((acc, percentage) => acc + percentage, 0);
+                return sum / percentages.length;
             }
 
             getAverageClass(average) {
@@ -1449,12 +1731,14 @@
         }
 
         function updateWeights() {
-            const quizWeight = parseInt(document.getElementById('quizWeight').value) || 0;
-            const examWeight = parseInt(document.getElementById('examWeight').value) || 0;
-            const projectWeight = parseInt(document.getElementById('projectWeight').value) || 0;
-            const assignmentWeight = parseInt(document.getElementById('assignmentWeight').value) || 0;
+            // Get all weight inputs (including custom categories)
+            const weightInputs = document.querySelectorAll('.weight-item input[type="number"]');
+            let total = 0;
             
-            const total = quizWeight + examWeight + projectWeight + assignmentWeight;
+            weightInputs.forEach(input => {
+                total += parseInt(input.value) || 0;
+            });
+            
             document.getElementById('totalWeight').textContent = total;
             
             const errorSpan = document.getElementById('weightError');
@@ -1466,6 +1750,123 @@
             }
         }
 
+        // Random icon pool for custom categories
+        const assessmentIcons = [
+            '🎯', '📊', '🔬', '🎨', '🏆', '⭐', '💡', '🚀', '🎪', '🎭',
+            '🎵', '🎸', '🏃', '🏀', '⚽', '🎲', '🧩', '🔍', '📐', '🧮',
+            '🌟', '💫', '⚡', '🔥', '💎', '🎈', '🎉', '🎊', '🏅', '🥇',
+            '📈', '📉', '💯', '🎤', '🎬', '📷', '🎪', '🎨', '🖼️', '🗂️'
+        ];
+
+        function selectRandomIcon() {
+            const randomIcon = assessmentIcons[Math.floor(Math.random() * assessmentIcons.length)];
+            document.getElementById('iconSelector').textContent = randomIcon;
+        }
+
+        function toggleConfigMode() {
+            const form = document.getElementById('customCategoryForm');
+            const toggleText = document.getElementById('configModeText');
+            
+            if (form.style.display === 'none') {
+                form.style.display = 'block';
+                toggleText.textContent = '❌ Cancel';
+                selectRandomIcon(); // Set a random icon
+            } else {
+                form.style.display = 'none';
+                toggleText.textContent = '➕ Add Custom Category';
+                // Clear form
+                document.getElementById('customCategoryName').value = '';
+                document.getElementById('customCategoryWeight').value = '10';
+            }
+        }
+
+        function addCustomCategory() {
+            const name = document.getElementById('customCategoryName').value.trim();
+            const weight = parseInt(document.getElementById('customCategoryWeight').value) || 0;
+            const icon = document.getElementById('iconSelector').textContent;
+            
+            if (!name) {
+                alert('❌ Please enter a category name!');
+                return;
+            }
+
+            if (weight <= 0) {
+                alert('❌ Please enter a valid weight percentage!');
+                return;
+            }
+
+            // Check if category already exists
+            const existingCategories = Array.from(document.querySelectorAll('.weight-item')).map(item => 
+                item.dataset.category?.toLowerCase()
+            );
+            
+            if (existingCategories.includes(name.toLowerCase())) {
+                alert('❌ A category with this name already exists!');
+                return;
+            }
+
+            // Create unique ID for the category
+            const categoryId = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            
+            // Create new weight item
+            const weightGrid = document.getElementById('weightGrid');
+            const newItem = document.createElement('div');
+            newItem.className = 'weight-item custom';
+            newItem.dataset.category = name;
+            newItem.innerHTML = `
+                <label for="${categoryId}Weight">${icon} ${name}</label>
+                <input type="number" id="${categoryId}Weight" min="0" max="100" value="${weight}" onchange="updateWeights()">
+                <span>%</span>
+                <button type="button" class="remove-category" onclick="removeCustomCategory('${name}')" title="Remove category">×</button>
+            `;
+            
+            weightGrid.appendChild(newItem);
+            
+            // Update assessment type dropdown
+            updateAssessmentTypeDropdown();
+            
+            // Update weights and close form
+            updateWeights();
+            toggleConfigMode();
+            
+            alert(`✅ Custom category "${name}" added successfully!`);
+        }
+
+        function removeCustomCategory(categoryName) {
+            if (confirm(`Are you sure you want to remove the "${categoryName}" category?`)) {
+                const weightItem = document.querySelector(`.weight-item[data-category="${categoryName}"]`);
+                if (weightItem) {
+                    weightItem.remove();
+                    updateWeights();
+                    updateAssessmentTypeDropdown();
+                }
+            }
+        }
+
+        function updateAssessmentTypeDropdown() {
+            const dropdown = document.getElementById('assessmentType');
+            if (!dropdown) return;
+            
+            // Clear current options
+            dropdown.innerHTML = '';
+            
+            // Add all categories (default + custom)
+            const weightItems = document.querySelectorAll('.weight-item[data-category]');
+            weightItems.forEach(item => {
+                const categoryName = item.dataset.category;
+                const label = item.querySelector('label').textContent;
+                
+                const option = document.createElement('option');
+                option.value = categoryName;
+                option.textContent = label;
+                dropdown.appendChild(option);
+            });
+        }
+
+        function cancelCustomCategory() {
+            toggleConfigMode();
+        }
+
         function saveAssessmentConfig() {
             const total = parseInt(document.getElementById('totalWeight').textContent);
             if (total !== 100) {
@@ -1473,12 +1874,20 @@
                 return;
             }
 
-            const config = {
-                Quiz: parseInt(document.getElementById('quizWeight').value) || 0,
-                Exam: parseInt(document.getElementById('examWeight').value) || 0,
-                Project: parseInt(document.getElementById('projectWeight').value) || 0,
-                Assignment: parseInt(document.getElementById('assignmentWeight').value) || 0
-            };
+            const config = {};
+            const weightItems = document.querySelectorAll('.weight-item[data-category]');
+            
+            weightItems.forEach(item => {
+                const categoryName = item.dataset.category;
+                const input = item.querySelector('input[type="number"]');
+                const label = item.querySelector('label').textContent;
+                
+                config[categoryName] = {
+                    weight: parseInt(input.value) || 0,
+                    label: label,
+                    isCustom: item.classList.contains('custom')
+                };
+            });
 
             // Save configuration for current class
             if (!classSystem.currentClass) {
@@ -1502,14 +1911,47 @@
             if (savedConfig) {
                 try {
                     const config = JSON.parse(savedConfig);
-                    document.getElementById('quizWeight').value = config.Quiz || 20;
-                    document.getElementById('examWeight').value = config.Exam || 40;
-                    document.getElementById('projectWeight').value = config.Project || 25;
-                    document.getElementById('assignmentWeight').value = config.Assignment || 15;
+                    
+                    // Clear existing custom categories
+                    document.querySelectorAll('.weight-item.custom').forEach(item => item.remove());
+                    
+                    // Load configuration
+                    Object.keys(config).forEach(categoryName => {
+                        const categoryData = config[categoryName];
+                        
+                        if (typeof categoryData === 'object' && categoryData.isCustom) {
+                            // Recreate custom category
+                            const categoryId = categoryName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                            const weightGrid = document.getElementById('weightGrid');
+                            const newItem = document.createElement('div');
+                            newItem.className = 'weight-item custom';
+                            newItem.dataset.category = categoryName;
+                            newItem.innerHTML = `
+                                <label for="${categoryId}Weight">${categoryData.label}</label>
+                                <input type="number" id="${categoryId}Weight" min="0" max="100" value="${categoryData.weight}" onchange="updateWeights()">
+                                <span>%</span>
+                                <button type="button" class="remove-category" onclick="removeCustomCategory('${categoryName}')" title="Remove category">×</button>
+                            `;
+                            weightGrid.appendChild(newItem);
+                        } else {
+                            // Load default category weights (backward compatibility)
+                            const weight = typeof categoryData === 'object' ? categoryData.weight : categoryData;
+                            const input = document.getElementById(`${categoryName.toLowerCase()}Weight`);
+                            if (input) {
+                                input.value = weight || 0;
+                            }
+                        }
+                    });
+                    
+                    // Update dropdown and weights
+                    updateAssessmentTypeDropdown();
                     updateWeights();
                 } catch (e) {
                     console.log('Error loading assessment config:', e);
                 }
+            } else {
+                // Default values for new configuration
+                updateAssessmentTypeDropdown();
             }
         }
 
@@ -1572,18 +2014,35 @@
                 </div>
 
                 <div id="quickGradeStudents" style="max-height: 400px; overflow-y: auto;">
-                    ${classData.students.map(student => `
+                    ${classData.students.map(student => {
+                        const selectedAssignment = classData.assignments[0]; // Default to first assignment
+                        const meta = classData.assignmentMeta?.[selectedAssignment];
+                        const totalPoints = meta?.totalPoints || 100;
+                        const studentGrade = student.grades[selectedAssignment];
+                        
+                        // Handle both formats
+                        let currentPoints = 0;
+                        if (typeof studentGrade === 'object' && studentGrade !== null) {
+                            currentPoints = studentGrade.points || 0;
+                        } else if (typeof studentGrade === 'number') {
+                            currentPoints = Math.round((studentGrade / 100) * totalPoints);
+                        }
+                        
+                        return `
                         <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
                             <span style="flex: 1; font-weight: 500;">${student.name}</span>
-                            <input type="number" 
-                                   id="grade_${student.id}" 
-                                   min="0" 
-                                   max="100" 
-                                   placeholder="Grade"
-                                   style="width: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 5px;"
-                                   value="${student.grades[document.getElementById('quickGradeAssignment')?.value] || ''}">
-                        </div>
-                    `).join('')}
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="number" 
+                                       id="grade_${student.id}" 
+                                       min="0" 
+                                       max="${totalPoints}" 
+                                       placeholder="0"
+                                       style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 5px; text-align: center;"
+                                       value="${currentPoints || ''}">
+                                <span style="font-size: 12px; color: #666;">/ ${totalPoints} pts</span>
+                            </div>
+                        </div>`;
+                    }).join('')}
                 </div>
 
                 <div style="margin-top: 20px; display: flex; gap: 10px;">
@@ -1613,14 +2072,24 @@
         function applyQuickGrades() {
             const selectedAssignment = document.getElementById('quickGradeAssignment').value;
             const classData = classSystem.classes[classSystem.currentClass];
+            const meta = classData.assignmentMeta?.[selectedAssignment];
+            const totalPoints = meta?.totalPoints || 100;
             
             let updatedCount = 0;
             classData.students.forEach(student => {
                 const gradeInput = document.getElementById(`grade_${student.id}`);
-                const grade = parseFloat(gradeInput.value);
+                const points = parseFloat(gradeInput.value);
                 
-                if (!isNaN(grade) && grade >= 0 && grade <= 100) {
-                    student.grades[selectedAssignment] = grade;
+                if (!isNaN(points) && points >= 0 && points <= totalPoints) {
+                    // Calculate percentage automatically
+                    const percentage = totalPoints > 0 ? (points / totalPoints) * 100 : 0;
+                    
+                    // Store in new format
+                    student.grades[selectedAssignment] = {
+                        points: points,
+                        totalPoints: totalPoints,
+                        percentage: percentage
+                    };
                     updatedCount++;
                 }
             });
@@ -1630,7 +2099,7 @@
             classSystem.updateStatistics();
             
             closeQuickGrading();
-            alert(`✅ Successfully updated ${updatedCount} grades for "${selectedAssignment}"!`);
+            alert(`✅ Successfully updated ${updatedCount} grades for "${selectedAssignment}"!\nTotal Points: ${totalPoints}`);
         }
 
         function closeQuickGrading() {
@@ -1640,14 +2109,126 @@
             }
         }
 
-        // Enhanced addAssignmentColumn to include assessment type
+        // Multi-Select Student Functions
+        function toggleStudentSelection(studentId) {
+            const checkbox = document.getElementById(`student_${studentId}`);
+            const item = checkbox.closest('.student-checkbox-item');
+            
+            checkbox.checked = !checkbox.checked;
+            
+            if (checkbox.checked) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+            
+            updateSelectedCount();
+        }
+
+        function selectAllUnassigned() {
+            const checkboxes = document.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+                checkbox.closest('.student-checkbox-item').classList.add('selected');
+            });
+            updateSelectedCount();
+        }
+
+        function clearAllUnassigned() {
+            const checkboxes = document.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                checkbox.closest('.student-checkbox-item').classList.remove('selected');
+            });
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.student-checkbox');
+            const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const countElement = document.getElementById('selectedCount');
+            if (countElement) {
+                countElement.textContent = `${selectedCount} selected`;
+            }
+        }
+
+        function addSelectedStudents() {
+            if (!classSystem.currentClass) {
+                alert('❌ Please select a class first!');
+                return;
+            }
+
+            const selectedCheckboxes = Array.from(document.querySelectorAll('.student-checkbox:checked'));
+            
+            if (selectedCheckboxes.length === 0) {
+                alert('❌ Please select at least one student!');
+                return;
+            }
+
+            let addedCount = 0;
+            const classData = classSystem.classes[classSystem.currentClass];
+
+            selectedCheckboxes.forEach(checkbox => {
+                try {
+                    const studentData = JSON.parse(checkbox.dataset.student);
+                    
+                    // Check if student is already in the class
+                    const existingStudent = classData.students.find(s => s.id === studentData.id);
+                    if (existingStudent) {
+                        console.log(`Student ${studentData.name} is already in this class`);
+                        return;
+                    }
+
+                    // Add student to class
+                    const student = {
+                        name: studentData.name,
+                        id: studentData.id,
+                        grades: {},
+                        createdAt: new Date().toLocaleDateString()
+                    };
+
+                    // Initialize grades for existing assignments
+                    classData.assignments.forEach(assignment => {
+                        student.grades[assignment] = 0;
+                    });
+
+                    classData.students.push(student);
+                    addedCount++;
+                } catch (e) {
+                    console.error('Error adding student:', e);
+                }
+            });
+
+            if (addedCount > 0) {
+                classSystem.saveDataToStorage();
+                classSystem.renderClassRecord();
+                classSystem.updateStatistics();
+                classSystem.loadUnassignedStudents(); // Refresh the list
+                
+                const message = addedCount === 1 ? 
+                    `✅ Successfully added ${addedCount} student to ${classSystem.currentClass}!` :
+                    `✅ Successfully added ${addedCount} students to ${classSystem.currentClass}!`;
+                    
+                classSystem.showSuccessMessage(message);
+            } else {
+                alert('❌ No students were added. They may already be in this class.');
+            }
+        }
+
+        // Enhanced addAssignmentColumn to include assessment type and points
         const originalAddAssignmentColumn = classSystem.addAssignmentColumn;
         classSystem.addAssignmentColumn = function() {
             const assignmentName = document.getElementById('assignmentName').value.trim();
             const assessmentType = document.getElementById('assessmentType').value;
+            const totalPoints = parseInt(document.getElementById('assignmentPoints').value) || 100;
             
             if (!assignmentName) {
                 alert('❌ Please enter an assessment name');
+                return;
+            }
+
+            if (totalPoints <= 0) {
+                alert('❌ Please enter a valid total points value');
                 return;
             }
 
@@ -1664,12 +2245,28 @@
                 return;
             }
 
+            // Store assignment with metadata
             classData.assignments.push(fullAssignmentName);
+            
+            // Store assignment metadata (points configuration)
+            if (!classData.assignmentMeta) {
+                classData.assignmentMeta = {};
+            }
+            classData.assignmentMeta[fullAssignmentName] = {
+                type: assessmentType,
+                name: assignmentName,
+                totalPoints: totalPoints,
+                createdDate: new Date().toISOString()
+            };
             
             // Initialize grades for all students
             classData.students.forEach(student => {
                 if (!student.grades[fullAssignmentName]) {
-                    student.grades[fullAssignmentName] = 0;
+                    student.grades[fullAssignmentName] = {
+                        points: 0,
+                        totalPoints: totalPoints,
+                        percentage: 0
+                    };
                 }
             });
 
@@ -1678,7 +2275,8 @@
             this.updateStatistics();
             
             document.getElementById('assignmentName').value = '';
-            this.showSuccessMessage(`✅ ${assessmentType} "${assignmentName}" added successfully!`);
+            document.getElementById('assignmentPoints').value = '100';
+            this.showSuccessMessage(`✅ ${assessmentType} "${assignmentName}" added successfully! (${totalPoints} points)`);
         };
 
         // Add CSS animations

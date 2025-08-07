@@ -1,0 +1,13 @@
+/**
+ * School Platform - Main Stylesheet
+ * Import all CSS modules for the complete design system
+ */
+
+/* Import design tokens first */
+@import url('./design-tokens.css');
+
+/* Import component library */
+@import url('./components.css');
+
+/* Page-specific styles */
+@import url('./pages.css');
