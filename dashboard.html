@@ -72,6 +72,28 @@
             border-radius: 50%;
         }
 
+        .view-toggle-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: rgba(255,255,255,0.7);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .view-toggle-btn.active {
+            background: rgba(255,255,255,0.9);
+            color: #667eea;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .view-toggle-btn:hover {
+            color: white;
+        }
+
         .teacher-profile-btn {
             background: rgba(255,255,255,0.2);
             color: white;
@@ -305,10 +327,24 @@
             <div id="dataStatus" style="margin-top: 15px; padding: 10px; border-radius: 8px; background: #e8f5e8; color: #2d5a2d; font-size: 14px; display: none;">
                 💾 Your data is automatically saved and will persist between sessions
             </div>
+            
+            <!-- View Toggle -->
+            <div style="margin-top: 20px; text-align: center;">
+                <div style="display: inline-flex; background: rgba(255,255,255,0.2); border-radius: 25px; padding: 4px;">
+                    <button id="myClassesBtn" class="view-toggle-btn active" onclick="switchView('myClasses')">
+                        👨‍🏫 My Classes
+                    </button>
+                    <button id="schoolOverviewBtn" class="view-toggle-btn" onclick="switchView('schoolOverview')">
+                        🏫 School Overview
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <!-- Quick Stats -->
-        <div class="stats-grid">
+        <!-- My Classes View -->
+        <div id="myClassesView">
+            <!-- Quick Stats -->
+            <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon">👥</div>
                 <div class="stat-number">28</div>
@@ -423,6 +459,67 @@
                 <span class="activity-time">2 days ago</span>
             </div>
         </div>
+        
+        </div> <!-- End My Classes View -->
+
+        <!-- School Overview View -->
+        <div id="schoolOverviewView" style="display: none;">
+            <div style="text-align: center; padding: 40px; background: rgba(255,255,255,0.1); border-radius: 15px; margin: 20px 0;">
+                <h2 style="color: white; margin-bottom: 15px;">🏫 School Administration</h2>
+                <p style="color: rgba(255,255,255,0.8); margin-bottom: 20px;">
+                    View and manage all students, teachers, and classes across the entire school.
+                </p>
+                
+                <!-- School-wide Stats -->
+                <div class="stats-grid" style="margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-number" id="schoolTotalStudents">0</div>
+                        <div class="stat-label">School Students</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👨‍🏫</div>
+                        <div class="stat-number" id="schoolTotalTeachers">1</div>
+                        <div class="stat-label">Active Teachers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📚</div>
+                        <div class="stat-number" id="schoolTotalClasses">0</div>
+                        <div class="stat-label">Total Classes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-number" id="schoolAvgGrade">0</div>
+                        <div class="stat-label">School Average</div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions for School Admin -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <button onclick="window.location.href='students.html'" 
+                            style="background: rgba(255,255,255,0.2); border: none; padding: 20px; border-radius: 15px; color: white; cursor: pointer; transition: all 0.3s ease;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">👤</div>
+                        <div style="font-weight: bold;">All Students</div>
+                        <div style="font-size: 14px; opacity: 0.8;">View & manage all student profiles</div>
+                    </button>
+                    
+                    <button onclick="window.location.href='grades.html'" 
+                            style="background: rgba(255,255,255,0.2); border: none; padding: 20px; border-radius: 15px; color: white; cursor: pointer; transition: all 0.3s ease;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">📚</div>
+                        <div style="font-weight: bold;">All Classes</div>
+                        <div style="font-size: 14px; opacity: 0.8;">View & manage school classes</div>
+                    </button>
+                    
+                    <button onclick="window.location.href='reports.html'" 
+                            style="background: rgba(255,255,255,0.2); border: none; padding: 20px; border-radius: 15px; color: white; cursor: pointer; transition: all 0.3s ease;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">📊</div>
+                        <div style="font-weight: bold;">School Reports</div>
+                        <div style="font-size: 14px; opacity: 0.8;">Analytics & insights</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
     </div>
 
     <script>
@@ -599,7 +696,11 @@
 
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
-                window.location.href = 'auth.html';
+                // Clear any existing sessions and redirect with logout parameter
+                if (window.supabase) {
+                    window.supabase.auth.signOut();
+                }
+                window.location.href = 'auth.html?logout=true';
             }
         }
 
@@ -726,6 +827,71 @@
                     console.log('Error loading teacher profile:', e);
                 }
             }
+        }
+
+        // View switching functionality
+        function switchView(view) {
+            const myClassesBtn = document.getElementById('myClassesBtn');
+            const schoolOverviewBtn = document.getElementById('schoolOverviewBtn');
+            const myClassesView = document.getElementById('myClassesView');
+            const schoolOverviewView = document.getElementById('schoolOverviewView');
+            
+            if (view === 'myClasses') {
+                myClassesBtn.classList.add('active');
+                schoolOverviewBtn.classList.remove('active');
+                myClassesView.style.display = 'block';
+                schoolOverviewView.style.display = 'none';
+            } else {
+                myClassesBtn.classList.remove('active');
+                schoolOverviewBtn.classList.add('active');
+                myClassesView.style.display = 'none';
+                schoolOverviewView.style.display = 'block';
+                loadSchoolOverviewData();
+            }
+        }
+
+        // Load school-wide statistics
+        function loadSchoolOverviewData() {
+            let totalStudents = 0;
+            let totalClasses = 0;
+            let totalGrades = 0;
+            let gradeSum = 0;
+
+            // Load all student profiles
+            const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles');
+            if (savedProfiles) {
+                try {
+                    const profiles = JSON.parse(savedProfiles);
+                    totalStudents = Object.keys(profiles).length;
+                } catch (e) {
+                    console.log('Error loading student profiles:', e);
+                }
+            }
+
+            // Load class records
+            const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
+            if (savedClassRecords) {
+                try {
+                    const classes = JSON.parse(savedClassRecords);
+                    totalClasses = Object.keys(classes).length;
+                    
+                    Object.values(classes).forEach(classData => {
+                        classData.students.forEach(student => {
+                            const grades = Object.values(student.grades);
+                            totalGrades += grades.length;
+                            gradeSum += grades.reduce((sum, grade) => sum + grade, 0);
+                        });
+                    });
+                } catch (e) {
+                    console.log('Error loading class records:', e);
+                }
+            }
+
+            // Update school overview stats
+            document.getElementById('schoolTotalStudents').textContent = totalStudents;
+            document.getElementById('schoolTotalClasses').textContent = totalClasses;
+            document.getElementById('schoolAvgGrade').textContent = 
+                totalGrades > 0 ? (gradeSum / totalGrades).toFixed(1) + '%' : '0%';
         }
 
         // Initialize

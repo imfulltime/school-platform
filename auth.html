@@ -483,6 +483,17 @@
 
         // Check if user is already signed in
         async function checkExistingSession() {
+            // Check if user was redirected here from logout
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromLogout = urlParams.get('logout') === 'true';
+            
+            if (fromLogout) {
+                // Clear the URL parameter and don't auto-redirect
+                window.history.replaceState({}, document.title, window.location.pathname);
+                showMessage('You have been logged out successfully.', 'success');
+                return false;
+            }
+            
             if (supabaseEnabled && supabase) {
                 try {
                     const { data: { session } } = await supabase.auth.getSession();
