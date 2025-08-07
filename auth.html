@@ -265,6 +265,11 @@
 
     <!-- Load Supabase from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Load Sync Service -->
+    <script type="module">
+        import syncService from './assets/js/services/SyncService.js';
+        window.syncService = syncService;
+    </script>
     
     <script>
         // Supabase configuration
@@ -353,16 +358,45 @@
                     
                     if (error) throw error;
                     
-                    showMessage('✅ Successfully signed in!', 'success');
+                    showMessage('✅ Successfully signed in! Loading your data...', 'success');
                     
-                    // Show migration option if localStorage data exists
-                    if (localStorage.getItem('schoolPlatform_classRecords')) {
+                    // Store user session
+                    if (data && data.user) {
+                        sessionStorage.setItem('currentUser', JSON.stringify({
+                            email: data.user.email,
+                            name: data.user.user_metadata?.full_name || data.user.email,
+                            id: data.user.id
+                        }));
+                    }
+                    
+                    // Trigger auth state change event for sync service
+                    window.dispatchEvent(new Event('authStateChanged'));
+                    
+                    // Initialize sync service and load data
+                    if (window.syncService) {
+                        try {
+                            await window.syncService.initialize();
+                            if (window.syncService.isEnabled) {
+                                showMessage('🔄 Syncing your data from cloud...', 'info');
+                                await window.syncService.loadFromSupabase();
+                                showMessage('✅ Data synced! Redirecting to dashboard...', 'success');
+                            }
+                        } catch (error) {
+                            console.warn('Sync error:', error);
+                        }
+                    }
+                    
+                    // Show migration option if localStorage data exists but server data doesn't
+                    const hasLocalData = localStorage.getItem('schoolPlatform_classRecords');
+                    const hasServerData = window.syncService && window.syncService.isEnabled;
+                    
+                    if (hasLocalData && !hasServerData) {
                         document.getElementById('migrationSection').style.display = 'block';
                     } else {
                         // Redirect to dashboard
                         setTimeout(() => {
                             window.location.href = 'dashboard.html';
-                        }, 1500);
+                        }, 2000);
                     }
                 } else {
                     throw new Error('Authentication system not available. Please contact administrator.');

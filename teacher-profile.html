@@ -530,6 +530,10 @@
         </div>
     </div>
 
+    <!-- Load Supabase and Sync Service -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/sync-loader.js"></script>
+    
     <script>
         class TeacherProfileManager {
             constructor() {
@@ -612,15 +616,32 @@
                         const classes = JSON.parse(savedClassRecords);
                         totalClasses = Object.keys(classes).length;
                         
+                        // Use Set to track unique students to avoid counting duplicates
+                        const uniqueStudentIds = new Set();
+                        
                         Object.values(classes).forEach(classData => {
-                            totalStudents += classData.students.length;
-                            
                             classData.students.forEach(student => {
+                                // Add student ID to set (automatically handles duplicates)
+                                uniqueStudentIds.add(student.id);
+                                
                                 const studentGrades = Object.values(student.grades || {});
                                 totalGrades += studentGrades.length;
-                                gradeSum += studentGrades.reduce((sum, grade) => sum + grade, 0);
+                                
+                                studentGrades.forEach(grade => {
+                                    // Handle both old format (number) and new format (object)
+                                    let gradeValue = 0;
+                                    if (typeof grade === 'object' && grade !== null) {
+                                        gradeValue = grade.percentage || 0;
+                                    } else if (typeof grade === 'number') {
+                                        gradeValue = grade;
+                                    }
+                                    gradeSum += gradeValue;
+                                });
                             });
                         });
+                        
+                        // Set total students to the count of unique student IDs
+                        totalStudents = uniqueStudentIds.size;
                     } catch (e) {
                         console.log('Error loading class data:', e);
                     }

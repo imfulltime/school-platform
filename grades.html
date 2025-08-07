@@ -437,14 +437,15 @@
 
         .student-checkbox-item {
             display: flex;
-            align-items: center;
-            padding: 12px 15px;
+            align-items: flex-start;
+            padding: 10px 12px;
             margin-bottom: 8px;
             background: white;
             border-radius: 8px;
             border: 2px solid transparent;
             transition: all 0.3s ease;
             cursor: pointer;
+            min-height: 50px;
         }
 
         .student-checkbox-item:hover {
@@ -461,26 +462,33 @@
 
         .student-checkbox {
             margin-right: 12px;
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         .student-info {
             flex: 1;
             display: flex;
             flex-direction: column;
+            min-width: 0;
+            padding-top: 2px;
         }
 
         .student-name {
             font-weight: 600;
-            font-size: 14px;
+            font-size: 15px;
+            line-height: 1.3;
+            margin-bottom: 4px;
+            word-wrap: break-word;
         }
 
         .student-details {
             font-size: 12px;
-            opacity: 0.8;
-            margin-top: 2px;
+            opacity: 0.75;
+            line-height: 1.4;
+            color: #666;
         }
 
         .multi-select-actions {
@@ -561,6 +569,84 @@
             font-size: 12px;
             cursor: pointer;
             margin-left: 10px;
+        }
+
+        /* Assessment Table Styles */
+        .grade-table-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .assessment-controls {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .current-assessment h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+
+        .sticky-column {
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 2;
+            border-right: 2px solid #e1e1e1;
+        }
+
+        .current-assessment-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+        }
+
+        .current-assessment-cell {
+            background: #f0f8ff !important;
+        }
+
+        .previous-assessments-header {
+            background: #f8f9fa;
+            color: #666;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .class-record-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .class-record-table th,
+        .class-record-table td {
+            padding: 12px 8px;
+            border: 1px solid #e1e1e1;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        .class-record-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .student-row:nth-child(even) {
+            background: #fafbfc;
+        }
+
+        .student-row:hover {
+            background: #e8f4fd;
         }
 
         @media (max-width: 768px) {
@@ -928,6 +1014,10 @@
         </div>
     </div>
 
+    <!-- Load Supabase and Sync Service -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/sync-loader.js"></script>
+    
     <script>
         class ClassRecordSystem {
             constructor() {
@@ -1375,27 +1465,69 @@
                     return;
                 }
 
-                // Build table with points display
+                // Build collapsible table with focus on current assessment
+                const currentAssignment = classData.assignments[classData.assignments.length - 1] || null;
+                const previousAssignments = classData.assignments.slice(0, -1);
+                
                 let tableHTML = `
-                    <table class="class-record-table">
-                        <thead>
-                            <tr>
-                                <th>Student Name</th>
-                                <th>Student ID</th>
-                                ${classData.assignments.map(assignment => {
-                                    const meta = classData.assignmentMeta?.[assignment];
-                                    const totalPoints = meta?.totalPoints || 100;
-                                    return `<th style="text-align: center;">
-                                        <div style="font-weight: bold; margin-bottom: 2px;">${assignment}</div>
-                                        <div style="font-size: 11px; color: #666;">/ ${totalPoints} pts</div>
-                                        <button onclick="classSystem.removeAssignment('${assignment}')" style="background: #ff4444; color: white; border: none; border-radius: 3px; padding: 2px 6px; margin-top: 3px; cursor: pointer; font-size: 10px;">×</button>
-                                    </th>`;
-                                }).join('')}
-                                <th>Average</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <div class="grade-table-container">
+                        <!-- Assessment Controls -->
+                        <div class="assessment-controls">
+                            <div class="current-assessment">
+                                <h3>📝 Current Assessment: ${currentAssignment || 'No assessments yet'}</h3>
+                                ${currentAssignment ? `
+                                    <button class="btn secondary small" onclick="showQuickGrading()">⚡ Quick Grade Entry</button>
+                                ` : ''}
+                            </div>
+                            ${previousAssignments.length > 0 ? `
+                                <button class="btn secondary small" onclick="togglePreviousAssessments()" id="toggleAssessmentsBtn">
+                                    📊 Show Previous Assessments (${previousAssignments.length})
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        <!-- Main Grade Table -->
+                        <table class="class-record-table">
+                            <thead>
+                                <tr>
+                                    <th class="sticky-column">Student Name</th>
+                                    <th class="sticky-column">Student ID</th>
+                                    <!-- Previous Assessments (Collapsible) -->
+                                    <th colspan="${previousAssignments.length}" class="previous-assessments-header" id="previousAssessmentsHeader" style="display: none;">
+                                        Previous Assessments
+                                    </th>
+                                    <!-- Current Assessment -->
+                                    ${currentAssignment ? (() => {
+                                        const meta = classData.assignmentMeta?.[currentAssignment];
+                                        const totalPoints = meta?.totalPoints || 100;
+                                        return `<th class="current-assessment-header" style="text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                            <div style="font-weight: bold; margin-bottom: 2px;">${currentAssignment}</div>
+                                            <div style="font-size: 11px; opacity: 0.9;">/ ${totalPoints} pts</div>
+                                            <button onclick="classSystem.removeAssignment('${currentAssignment}')" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 3px; padding: 2px 6px; margin-top: 3px; cursor: pointer; font-size: 10px;">×</button>
+                                        </th>`;
+                                    })() : '<th>No Current Assessment</th>'}
+                                    <th class="sticky-column">Average</th>
+                                    <th class="sticky-column">Actions</th>
+                                </tr>
+                                <!-- Previous Assessments Sub-header -->
+                                <tr id="previousAssessmentsSubHeader" style="display: none;">
+                                    <th></th>
+                                    <th></th>
+                                    ${previousAssignments.map(assignment => {
+                                        const meta = classData.assignmentMeta?.[assignment];
+                                        const totalPoints = meta?.totalPoints || 100;
+                                        return `<th style="text-align: center; font-size: 10px; background: #f8f9fa;">
+                                            <div style="font-weight: normal; margin-bottom: 1px;">${assignment.split(': ')[1] || assignment}</div>
+                                            <div style="font-size: 9px; color: #666;">/${totalPoints}pts</div>
+                                            <button onclick="classSystem.removeAssignment('${assignment}')" style="background: #ff4444; color: white; border: none; border-radius: 2px; padding: 1px 3px; margin-top: 1px; cursor: pointer; font-size: 8px;">×</button>
+                                        </th>`;
+                                    }).join('')}
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
                 `;
 
                 classData.students.forEach(student => {
@@ -1404,18 +1536,18 @@
                     
                     tableHTML += `
                         <tr class="student-row">
-                            <td>
+                            <td class="sticky-column">
                                 <div class="student-name">${student.name}</div>
                             </td>
-                            <td>
+                            <td class="sticky-column">
                                 <div class="student-id">${student.id}</div>
                             </td>
-                            ${classData.assignments.map(assignment => {
+                            <!-- Previous Assessments (Collapsible) -->
+                            ${previousAssignments.map(assignment => {
                                 const meta = classData.assignmentMeta?.[assignment];
                                 const totalPoints = meta?.totalPoints || 100;
                                 const studentGrade = student.grades[assignment];
                                 
-                                // Handle both old format (number) and new format (object)
                                 let currentPoints = 0;
                                 let currentPercentage = 0;
                                 
@@ -1423,31 +1555,61 @@
                                     currentPoints = studentGrade.points || 0;
                                     currentPercentage = studentGrade.percentage || 0;
                                 } else if (typeof studentGrade === 'number') {
-                                    // Legacy format - assume it's a percentage, convert to points
                                     currentPercentage = studentGrade;
                                     currentPoints = Math.round((studentGrade / 100) * totalPoints);
                                 }
                                 
-                                return `<td style="text-align: center;">
+                                return `<td class="previous-assessment-cell" style="text-align: center; display: none;">
                                     <div style="display: flex; flex-direction: column; align-items: center;">
-                                        <input type="number" class="grade-input points-input" 
+                                        <input type="number" class="grade-input points-input small" 
                                                min="0" max="${totalPoints}" placeholder="0" 
                                                value="${currentPoints || ''}" 
-                                               style="width: 60px; text-align: center; margin-bottom: 2px;"
+                                               style="width: 50px; text-align: center; margin-bottom: 1px; font-size: 11px;"
                                                onchange="classSystem.updatePointsGrade('${student.id}', '${assignment}', this.value, ${totalPoints})"
                                                title="Enter points earned">
-                                        <div style="font-size: 10px; color: #666;">
+                                        <div style="font-size: 9px; color: #666;">
                                             ${currentPercentage > 0 ? currentPercentage.toFixed(1) + '%' : '--'}
                                         </div>
                                     </div>
                                 </td>`;
                             }).join('')}
-                            <td>
+                            <!-- Current Assessment -->
+                            ${currentAssignment ? (() => {
+                                const meta = classData.assignmentMeta?.[currentAssignment];
+                                const totalPoints = meta?.totalPoints || 100;
+                                const studentGrade = student.grades[currentAssignment];
+                                
+                                let currentPoints = 0;
+                                let currentPercentage = 0;
+                                
+                                if (typeof studentGrade === 'object' && studentGrade !== null) {
+                                    currentPoints = studentGrade.points || 0;
+                                    currentPercentage = studentGrade.percentage || 0;
+                                } else if (typeof studentGrade === 'number') {
+                                    currentPercentage = studentGrade;
+                                    currentPoints = Math.round((studentGrade / 100) * totalPoints);
+                                }
+                                
+                                return `<td class="current-assessment-cell" style="text-align: center; background: #f0f8ff;">
+                                    <div style="display: flex; flex-direction: column; align-items: center;">
+                                        <input type="number" class="grade-input points-input current" 
+                                               min="0" max="${totalPoints}" placeholder="0" 
+                                               value="${currentPoints || ''}" 
+                                               style="width: 70px; text-align: center; margin-bottom: 2px; border: 2px solid #667eea;"
+                                               onchange="classSystem.updatePointsGrade('${student.id}', '${currentAssignment}', this.value, ${totalPoints})"
+                                               title="Enter points earned">
+                                        <div style="font-size: 10px; color: #667eea; font-weight: bold;">
+                                            ${currentPercentage > 0 ? currentPercentage.toFixed(1) + '%' : '--'}
+                                        </div>
+                                    </div>
+                                </td>`;
+                            })() : '<td>--</td>'}
+                            <td class="sticky-column">
                                 <div class="average-display ${averageClass}">
                                     ${average > 0 ? average.toFixed(1) + '%' : '--'}
                                 </div>
                             </td>
-                            <td>
+                            <td class="sticky-column">
                                 <button class="btn btn-small btn-danger" onclick="classSystem.removeStudent('${student.id}')">Remove</button>
                             </td>
                         </tr>
@@ -1457,6 +1619,7 @@
                 tableHTML += `
                         </tbody>
                     </table>
+                </div>
                 `;
 
                 container.innerHTML = tableHTML;
@@ -1865,6 +2028,32 @@
 
         function cancelCustomCategory() {
             toggleConfigMode();
+        }
+
+        // Toggle Previous Assessments Visibility
+        function togglePreviousAssessments() {
+            const header = document.getElementById('previousAssessmentsHeader');
+            const subHeader = document.getElementById('previousAssessmentsSubHeader');
+            const cells = document.querySelectorAll('.previous-assessment-cell');
+            const toggleBtn = document.getElementById('toggleAssessmentsBtn');
+            
+            if (!header || !subHeader || !toggleBtn) return;
+            
+            const isVisible = header.style.display !== 'none';
+            
+            if (isVisible) {
+                // Hide previous assessments
+                header.style.display = 'none';
+                subHeader.style.display = 'none';
+                cells.forEach(cell => cell.style.display = 'none');
+                toggleBtn.innerHTML = `📊 Show Previous Assessments (${cells.length > 0 ? Math.floor(cells.length / document.querySelectorAll('.student-row').length) : 0})`;
+            } else {
+                // Show previous assessments
+                header.style.display = 'table-cell';
+                subHeader.style.display = 'table-row';
+                cells.forEach(cell => cell.style.display = 'table-cell');
+                toggleBtn.innerHTML = `📊 Hide Previous Assessments`;
+            }
         }
 
         function saveAssessmentConfig() {

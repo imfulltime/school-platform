@@ -423,6 +423,106 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Photo Upload Styles */
+        .photo-upload-section {
+            grid-column: span 2;
+        }
+
+        .photo-upload-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            margin-top: 10px;
+        }
+
+        .photo-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 12px;
+            border: 2px dashed #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .photo-preview:hover {
+            border-color: #667eea;
+            background: #f0f8ff;
+        }
+
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .photo-placeholder {
+            text-align: center;
+            color: #999;
+        }
+
+        .placeholder-icon {
+            display: block;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .placeholder-text {
+            font-size: 12px;
+        }
+
+        .photo-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            min-width: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
     </style>
 </head>
 <body>
@@ -511,6 +611,26 @@
                                 <label class="info-label" for="studentId">Student ID *</label>
                                 <input type="text" id="studentId" class="info-input" required readonly style="background: #f8f9fa;">
                                 <small style="color: #666; font-size: 12px;">Auto-generated</small>
+                            </div>
+                            
+                            <!-- Photo Upload Section -->
+                            <div class="info-item photo-upload-section">
+                                <label class="info-label">Profile Photo</label>
+                                <div class="photo-upload-container">
+                                    <div class="photo-preview" id="photoPreview">
+                                        <div class="photo-placeholder">
+                                            <span class="placeholder-icon">📷</span>
+                                            <span class="placeholder-text">No photo</span>
+                                        </div>
+                                    </div>
+                                    <div class="photo-controls">
+                                        <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="handlePhotoUpload(event)">
+                                        <button type="button" class="btn btn-small" onclick="document.getElementById('photoInput').click()">📷 Upload Photo</button>
+                                        <button type="button" class="btn btn-small btn-secondary" onclick="editPhoto()" id="editPhotoBtn" style="display: none;">✏️ Edit</button>
+                                        <button type="button" class="btn btn-small btn-danger" onclick="deletePhoto()" id="deletePhotoBtn" style="display: none;">🗑️ Delete</button>
+                                    </div>
+                                </div>
+                                <small style="color: #666; font-size: 12px;">Supported formats: JPG, PNG, GIF (Max: 2MB)</small>
                             </div>
                             <div class="info-item">
                                 <label class="info-label" for="dateOfBirth">Date of Birth</label>
@@ -694,6 +814,10 @@
         </div>
     </div>
 
+    <!-- Load Supabase and Sync Service -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/sync-loader.js"></script>
+    
     <script>
         class StudentProfileSystem {
             constructor() {
@@ -976,7 +1100,12 @@
                     return `
                         <div class="student-card" onclick="openStudentProfile('${student.name}', '${student.id}')">
                             <div class="student-header">
-                                <div class="student-avatar">${student.name.charAt(0)}</div>
+                                <div class="student-avatar">
+                                    ${student.photo && student.photo.data ? 
+                                        `<img src="${student.photo.data}" alt="${student.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+                                        student.name.charAt(0)
+                                    }
+                                </div>
                                 <div class="student-name">${student.name}</div>
                                 <div class="student-id">ID: ${student.id}</div>
                             </div>
@@ -992,10 +1121,12 @@
                                     </div>
                                 </div>
                                 <div class="student-classes">
-                                    <strong>Classes:</strong><br>
-                                    ${student.classes.map(className => 
-                                        `<span class="class-chip">${className}</span>`
-                                    ).join('')}
+                                    <strong>Subjects:</strong><br>
+                                    ${student.classes.map(className => {
+                                        // Extract subject name only (before first hyphen/dash)
+                                        const subjectName = className.split(' - ')[0].trim();
+                                        return `<span class="class-chip">${subjectName}</span>`;
+                                    }).join('')}
                                 </div>
                                 <button class="view-profile-btn">View Full Profile</button>
                             </div>
@@ -1382,7 +1513,12 @@
                     return `
                         <div class="student-card" onclick="openStudentProfile('${student.name}', '${student.id}')">
                             <div class="student-header">
-                                <div class="student-avatar">${student.name.charAt(0)}</div>
+                                <div class="student-avatar">
+                                    ${student.photo && student.photo.data ? 
+                                        `<img src="${student.photo.data}" alt="${student.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+                                        student.name.charAt(0)
+                                    }
+                                </div>
                                 <div class="student-name">${student.name}</div>
                                 <div class="student-id">ID: ${student.id}</div>
                                 <div class="student-status" style="font-size: 12px; color: ${enrollmentStatus === 'Active' ? '#28a745' : '#6c757d'};">
@@ -1404,10 +1540,12 @@
                                     <div><strong>Grade:</strong> ${gradeLevel} | <strong>Section:</strong> ${section}</div>
                                 </div>
                                 <div class="student-classes">
-                                    <strong>Classes:</strong><br>
-                                    ${student.classes.map(className => 
-                                        `<span class="class-chip">${className}</span>`
-                                    ).join('')}
+                                    <strong>Subjects:</strong><br>
+                                    ${student.classes.map(className => {
+                                        // Extract subject name only (before first hyphen/dash)
+                                        const subjectName = className.split(' - ')[0].trim();
+                                        return `<span class="class-chip">${subjectName}</span>`;
+                                    }).join('')}
                                 </div>
                                 <button class="view-profile-btn">View Full Profile</button>
                             </div>
@@ -1444,6 +1582,119 @@
 
         // Initialize the system
         const profileSystem = new StudentProfileSystem();
+
+        // Photo Upload Functions
+        let currentPhoto = null;
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file size (2MB max)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('❌ File size must be less than 2MB');
+                return;
+            }
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('❌ Please select a valid image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const photoPreview = document.getElementById('photoPreview');
+                const editBtn = document.getElementById('editPhotoBtn');
+                const deleteBtn = document.getElementById('deletePhotoBtn');
+
+                // Create image element
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.alt = 'Profile Photo';
+
+                // Replace placeholder with image
+                photoPreview.innerHTML = '';
+                photoPreview.appendChild(img);
+
+                // Show edit and delete buttons
+                editBtn.style.display = 'inline-flex';
+                deleteBtn.style.display = 'inline-flex';
+
+                // Store photo data
+                currentPhoto = {
+                    data: e.target.result,
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    lastModified: new Date().toISOString()
+                };
+
+                console.log('✅ Photo uploaded successfully');
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function editPhoto() {
+            // For now, just allow re-upload
+            document.getElementById('photoInput').click();
+        }
+
+        function deletePhoto() {
+            if (!confirm('Are you sure you want to delete this photo?')) {
+                return;
+            }
+
+            const photoPreview = document.getElementById('photoPreview');
+            const editBtn = document.getElementById('editPhotoBtn');
+            const deleteBtn = document.getElementById('deletePhotoBtn');
+            const photoInput = document.getElementById('photoInput');
+
+            // Reset to placeholder
+            photoPreview.innerHTML = `
+                <div class="photo-placeholder">
+                    <span class="placeholder-icon">📷</span>
+                    <span class="placeholder-text">No photo</span>
+                </div>
+            `;
+
+            // Hide buttons
+            editBtn.style.display = 'none';
+            deleteBtn.style.display = 'none';
+
+            // Clear file input
+            photoInput.value = '';
+
+            // Clear stored photo data
+            currentPhoto = null;
+
+            console.log('✅ Photo deleted successfully');
+        }
+
+        function displayPhoto(photoData) {
+            if (!photoData) return;
+
+            const photoPreview = document.getElementById('photoPreview');
+            const editBtn = document.getElementById('editPhotoBtn');
+            const deleteBtn = document.getElementById('deletePhotoBtn');
+
+            // Create image element
+            const img = document.createElement('img');
+            img.src = photoData.data;
+            img.alt = 'Profile Photo';
+
+            // Replace placeholder with image
+            photoPreview.innerHTML = '';
+            photoPreview.appendChild(img);
+
+            // Show edit and delete buttons
+            editBtn.style.display = 'inline-flex';
+            deleteBtn.style.display = 'inline-flex';
+
+            // Store photo data
+            currentPhoto = photoData;
+        }
 
         // Check if we should auto-open the add student modal (from dashboard redirect)
         window.addEventListener('load', function() {
@@ -1561,6 +1812,7 @@
                 // Additional Information
                 enrollmentStatus: document.getElementById('enrollmentStatus').value || 'Active',
                 medicalInfo: document.getElementById('medicalInfo').value.trim(),
+                photo: currentPhoto, // Include photo data
                 notes: document.getElementById('notes').value.trim(),
                 
                 // System fields
