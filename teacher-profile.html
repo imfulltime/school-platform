@@ -279,6 +279,22 @@
             color: #666;
             font-size: 14px;
         }
+
+        .clickable-stat {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clickable-stat:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .clickable-stat:hover .stat-number {
+            color: white;
+        }
         
         .welcome-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -348,9 +364,9 @@
                 <div class="stat-number" id="totalClasses">0</div>
                 <div class="stat-label">Classes Teaching</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card clickable-stat" onclick="viewMyStudents()" title="Click to view all your students">
                 <div class="stat-number" id="totalStudents">0</div>
-                <div class="stat-label">Total Students</div>
+                <div class="stat-label">Total Students 👥</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="yearsExperience">0</div>
@@ -851,6 +867,26 @@
 
         function cancelEdit() {
             profileManager.cancelEdit();
+        }
+
+        // Navigate to students page showing only this teacher's students
+        function viewMyStudents() {
+            // Store current teacher info for filtering
+            const teacherProfile = JSON.parse(localStorage.getItem('schoolPlatform_teacherProfile') || '{}');
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+            
+            const teacherName = teacherProfile.firstName && teacherProfile.lastName ? 
+                `${teacherProfile.firstName} ${teacherProfile.lastName}` : 
+                (currentUser.name || currentUser.email || 'Unknown Teacher');
+            
+            // Set filter flag for students.html
+            sessionStorage.setItem('filterByTeacher', JSON.stringify({
+                createdBy: currentUser.email || currentUser.username || 'unknown',
+                teacherName: teacherName
+            }));
+            
+            // Navigate to students page
+            window.location.href = 'students.html';
         }
     </script>
 </body>

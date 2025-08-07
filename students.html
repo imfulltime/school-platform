@@ -707,7 +707,55 @@
                 this.loadAllData();
                 this.compileStudentProfiles();
                 this.populateClassFilter();
+                this.checkTeacherFilter();
                 this.renderStudents();
+                this.setupFilterListeners();
+            }
+
+            setupFilterListeners() {
+                // Add event listeners for filters
+                const statusFilter = document.getElementById('statusFilter');
+                const classFilter = document.getElementById('classFilter');
+                const searchInput = document.getElementById('searchInput');
+
+                if (statusFilter) {
+                    statusFilter.addEventListener('change', () => this.renderStudents());
+                }
+                if (classFilter) {
+                    classFilter.addEventListener('change', () => this.renderStudents());
+                }
+                if (searchInput) {
+                    searchInput.addEventListener('input', () => this.renderStudents());
+                }
+            }
+
+            checkTeacherFilter() {
+                // Check if we should filter by a specific teacher
+                const teacherFilter = sessionStorage.getItem('filterByTeacher');
+                if (teacherFilter) {
+                    try {
+                        const filter = JSON.parse(teacherFilter);
+                        // Set up the UI to show we're filtering by teacher
+                        const statusFilter = document.getElementById('statusFilter');
+                        statusFilter.innerHTML = `
+                            <option value="teacher-${filter.createdBy}" selected>📚 My Students (${filter.teacherName})</option>
+                            <option value="all">👥 All Students</option>
+                            <option value="Active">✅ Active Students</option>
+                            <option value="Inactive">⏸️ Inactive Students</option>
+                            <option value="Graduated">🎓 Graduated Students</option>
+                            <option value="Transferred">📋 Transferred Students</option>
+                        `;
+                        
+                        // Update the header to show we're in teacher view
+                        document.querySelector('.header h1').textContent = `${filter.teacherName}'s Students`;
+                        
+                        // Clear the filter after use
+                        sessionStorage.removeItem('filterByTeacher');
+                    } catch (e) {
+                        console.error('Error parsing teacher filter:', e);
+                        sessionStorage.removeItem('filterByTeacher');
+                    }
+                }
             }
 
             loadAllData() {
@@ -856,18 +904,71 @@
             renderStudents() {
                 const container = document.getElementById('studentsContainer');
                 
-                if (this.students.length === 0) {
+                // Get current filter values
+                const statusFilter = document.getElementById('statusFilter').value;
+                const classFilter = document.getElementById('classFilter').value;
+                const searchInput = document.getElementById('searchInput').value.toLowerCase();
+                
+                // Filter students based on current criteria
+                let filteredStudents = this.students.filter(student => {
+                    // Search filter
+                    if (searchInput && !student.name.toLowerCase().includes(searchInput)) {
+                        return false;
+                    }
+                    
+                    // Class filter
+                    if (classFilter && !student.classes.includes(classFilter)) {
+                        return false;
+                    }
+                    
+                    // Status filter (including teacher filter)
+                    if (statusFilter && statusFilter !== 'all') {
+                        if (statusFilter.startsWith('teacher-')) {
+                            // Teacher-specific filter
+                            const teacherEmail = statusFilter.substring(8); // Remove 'teacher-' prefix
+                            const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles') || '{}';
+                            try {
+                                const profiles = JSON.parse(savedProfiles);
+                                const detailedProfile = profiles[student.id];
+                                if (!detailedProfile || detailedProfile.createdBy !== teacherEmail) {
+                                    return false;
+                                }
+                            } catch (e) {
+                                console.log('Error checking teacher filter:', e);
+                                return false;
+                            }
+                        } else {
+                            // Regular status filter
+                            const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles') || '{}';
+                            try {
+                                const profiles = JSON.parse(savedProfiles);
+                                const detailedProfile = profiles[student.id];
+                                const studentStatus = detailedProfile?.enrollmentStatus || 'Active';
+                                if (studentStatus !== statusFilter) {
+                                    return false;
+                                }
+                            } catch (e) {
+                                console.log('Error checking status filter:', e);
+                                return false;
+                            }
+                        }
+                    }
+                    
+                    return true;
+                });
+                
+                if (filteredStudents.length === 0) {
                     container.innerHTML = `
                         <div class="empty-state" style="grid-column: 1 / -1;">
                             <div class="empty-state-icon">👥</div>
                             <h3>No Students Found</h3>
-                            <p>Students will appear here once you add them to classes or take attendance.</p>
+                            <p>No students match the current filter criteria.</p>
                         </div>
                     `;
                     return;
                 }
 
-                container.innerHTML = this.students.map(student => {
+                container.innerHTML = filteredStudents.map(student => {
                     const average = student.totalGrades > 0 ? (student.gradeSum / student.totalGrades).toFixed(1) : 0;
                     const attendanceTotal = student.attendance.present + student.attendance.absent + student.attendance.tardy;
                     const attendanceRate = attendanceTotal > 0 ? ((student.attendance.present / attendanceTotal) * 100).toFixed(0) : 0;
@@ -1464,6 +1565,15 @@
                 
                 // System fields
                 grades: {},
+                createdBy: (JSON.parse(sessionStorage.getItem('currentUser') || '{}')).email || 
+                          (JSON.parse(sessionStorage.getItem('currentUser') || '{}')).username || 'unknown',
+                createdByTeacher: (() => {
+                    const teacherProfile = JSON.parse(localStorage.getItem('schoolPlatform_teacherProfile') || '{}');
+                    const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+                    return teacherProfile.firstName && teacherProfile.lastName ? 
+                        `${teacherProfile.firstName} ${teacherProfile.lastName}` : 
+                        (currentUser.name || currentUser.email || 'Unknown Teacher');
+                })(),
                 dateCreated: new Date().toISOString()
             };
 

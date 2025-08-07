@@ -340,11 +340,88 @@
         .assignment-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 20px;
             padding: 15px;
             background: #f8f9ff;
             border-radius: 10px;
+        }
+
+        .assignment-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Assessment Configuration Styles */
+        .assessment-config {
+            padding: 20px 0;
+        }
+
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .weight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .weight-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .weight-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .weight-item label {
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .weight-item input {
+            width: 60px;
+            padding: 5px 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .total-weight {
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .btn.secondary:hover {
+            background: #5a6268;
         }
 
         @media (max-width: 768px) {
@@ -455,7 +532,10 @@
                 <!-- Class Management -->
                 <div class="class-management">
                     <div class="card fade-in">
-                        <h2>Add Student to Class</h2>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2>Add Student to Class</h2>
+                            <button class="btn secondary" onclick="toggleAssessmentConfig()">⚙️ Configure Assessments</button>
+                        </div>
                         
                         <!-- Student Selection Method -->
                         <div class="form-group">
@@ -582,15 +662,70 @@
                         </div>
                     </div>
 
+                    <!-- Assessment Configuration -->
+                    <div class="card fade-in" id="assessmentConfigCard" style="display: none;">
+                        <h2>📊 Assessment Configuration</h2>
+                        <div class="assessment-config">
+                            <div class="config-header">
+                                <h3>Set Grade Category Weights</h3>
+                                <p style="color: #666; margin-bottom: 15px;">Configure how different assessment types contribute to final grades</p>
+                            </div>
+                            
+                            <div id="assessmentWeights" class="assessment-weights">
+                                <div class="weight-grid">
+                                    <div class="weight-item">
+                                        <label for="quizWeight">🧠 Quizzes</label>
+                                        <input type="number" id="quizWeight" min="0" max="100" value="20" onchange="updateWeights()">
+                                        <span>%</span>
+                                    </div>
+                                    <div class="weight-item">
+                                        <label for="examWeight">📝 Exams</label>
+                                        <input type="number" id="examWeight" min="0" max="100" value="40" onchange="updateWeights()">
+                                        <span>%</span>
+                                    </div>
+                                    <div class="weight-item">
+                                        <label for="projectWeight">💼 Projects</label>
+                                        <input type="number" id="projectWeight" min="0" max="100" value="25" onchange="updateWeights()">
+                                        <span>%</span>
+                                    </div>
+                                    <div class="weight-item">
+                                        <label for="assignmentWeight">📋 Assignments</label>
+                                        <input type="number" id="assignmentWeight" min="0" max="100" value="15" onchange="updateWeights()">
+                                        <span>%</span>
+                                    </div>
+                                </div>
+                                <div class="total-weight">
+                                    Total: <span id="totalWeight">100</span>%
+                                    <span id="weightError" style="color: red; display: none;">⚠️ Total must equal 100%</span>
+                                </div>
+                                <button class="btn" onclick="saveAssessmentConfig()">💾 Save Configuration</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card fade-in">
                         <h2 id="classTitle">Class Record</h2>
                         <div class="assignment-header">
-                            <div>
-                                <strong>Assignment:</strong>
-                                <input type="text" id="assignmentName" placeholder="Enter assignment name" style="margin-left: 10px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 5px;">
-                                <button class="add-assignment" onclick="addAssignmentColumn()">Add Assignment</button>
+                            <div class="assignment-controls">
+                                <div>
+                                    <strong>Assessment Type:</strong>
+                                    <select id="assessmentType" style="margin-left: 10px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                        <option value="Quiz">🧠 Quiz</option>
+                                        <option value="Exam">📝 Exam</option>
+                                        <option value="Project">💼 Project</option>
+                                        <option value="Assignment">📋 Assignment</option>
+                                    </select>
+                                </div>
+                                <div style="margin-top: 10px;">
+                                    <strong>Assessment Name:</strong>
+                                    <input type="text" id="assignmentName" placeholder="Enter assessment name" style="margin-left: 10px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                    <button class="add-assignment" onclick="addAssignmentColumn()">➕ Add Assessment</button>
+                                </div>
                             </div>
-                            <button class="btn" onclick="saveAllGrades()">💾 Save All Grades</button>
+                            <div class="header-actions">
+                                <button class="btn secondary" onclick="showQuickGrading()">⚡ Quick Grade Entry</button>
+                                <button class="btn" onclick="saveAllGrades()">💾 Save All Grades</button>
+                            </div>
                         </div>
                         <div id="classRecordContainer"></div>
                     </div>
@@ -803,6 +938,15 @@
                     medicalInfo: '',
                     notes: '',
                     grades: {},
+                    createdBy: (JSON.parse(sessionStorage.getItem('currentUser') || '{}')).email || 
+                              (JSON.parse(sessionStorage.getItem('currentUser') || '{}')).username || 'unknown',
+                    createdByTeacher: (() => {
+                        const teacherProfile = JSON.parse(localStorage.getItem('schoolPlatform_teacherProfile') || '{}');
+                        const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+                        return teacherProfile.firstName && teacherProfile.lastName ? 
+                            `${teacherProfile.firstName} ${teacherProfile.lastName}` : 
+                            (currentUser.name || currentUser.email || 'Unknown Teacher');
+                    })(),
                     dateCreated: new Date().toISOString()
                 };
 
@@ -906,17 +1050,18 @@
                     }
                 }
 
-                // Get all assigned student IDs
-                const assignedStudentIds = new Set();
-                Object.values(this.classes).forEach(classData => {
-                    classData.students.forEach(student => {
-                        assignedStudentIds.add(student.id);
+                // Get student IDs assigned to THIS SPECIFIC CLASS (for multi-subject support)
+                const currentClassStudentIds = new Set();
+                if (this.currentClass && this.classes[this.currentClass]) {
+                    this.classes[this.currentClass].students.forEach(student => {
+                        currentClassStudentIds.add(student.id);
                     });
-                });
+                }
 
-                // Filter unassigned students (only active students)
+                // Filter students NOT in THIS SPECIFIC SUBJECT/CLASS (only active students)
+                // Students can be in multiple subjects, so only exclude if already in THIS class
                 const unassignedStudents = allStudents.filter(student => 
-                    !assignedStudentIds.has(student.id) && 
+                    !currentClassStudentIds.has(student.id) && 
                     (student.enrollmentStatus === 'Active' || !student.enrollmentStatus)
                 );
 
@@ -1291,6 +1436,250 @@
                 document.getElementById('newStudentId').value = nextId;
             }
         }
+
+        // Assessment Configuration Functions
+        function toggleAssessmentConfig() {
+            const configCard = document.getElementById('assessmentConfigCard');
+            if (configCard.style.display === 'none') {
+                configCard.style.display = 'block';
+                loadAssessmentConfig();
+            } else {
+                configCard.style.display = 'none';
+            }
+        }
+
+        function updateWeights() {
+            const quizWeight = parseInt(document.getElementById('quizWeight').value) || 0;
+            const examWeight = parseInt(document.getElementById('examWeight').value) || 0;
+            const projectWeight = parseInt(document.getElementById('projectWeight').value) || 0;
+            const assignmentWeight = parseInt(document.getElementById('assignmentWeight').value) || 0;
+            
+            const total = quizWeight + examWeight + projectWeight + assignmentWeight;
+            document.getElementById('totalWeight').textContent = total;
+            
+            const errorSpan = document.getElementById('weightError');
+            if (total !== 100) {
+                errorSpan.style.display = 'inline';
+                errorSpan.textContent = `⚠️ Total must equal 100% (currently ${total}%)`;
+            } else {
+                errorSpan.style.display = 'none';
+            }
+        }
+
+        function saveAssessmentConfig() {
+            const total = parseInt(document.getElementById('totalWeight').textContent);
+            if (total !== 100) {
+                alert('❌ Total weight must equal 100% before saving!');
+                return;
+            }
+
+            const config = {
+                Quiz: parseInt(document.getElementById('quizWeight').value) || 0,
+                Exam: parseInt(document.getElementById('examWeight').value) || 0,
+                Project: parseInt(document.getElementById('projectWeight').value) || 0,
+                Assignment: parseInt(document.getElementById('assignmentWeight').value) || 0
+            };
+
+            // Save configuration for current class
+            if (!classSystem.currentClass) {
+                alert('❌ Please select a class first!');
+                return;
+            }
+
+            const assessmentKey = `schoolPlatform_assessmentConfig_${classSystem.currentClass}`;
+            localStorage.setItem(assessmentKey, JSON.stringify(config));
+            
+            alert('✅ Assessment configuration saved successfully!');
+            document.getElementById('assessmentConfigCard').style.display = 'none';
+        }
+
+        function loadAssessmentConfig() {
+            if (!classSystem.currentClass) return;
+
+            const assessmentKey = `schoolPlatform_assessmentConfig_${classSystem.currentClass}`;
+            const savedConfig = localStorage.getItem(assessmentKey);
+            
+            if (savedConfig) {
+                try {
+                    const config = JSON.parse(savedConfig);
+                    document.getElementById('quizWeight').value = config.Quiz || 20;
+                    document.getElementById('examWeight').value = config.Exam || 40;
+                    document.getElementById('projectWeight').value = config.Project || 25;
+                    document.getElementById('assignmentWeight').value = config.Assignment || 15;
+                    updateWeights();
+                } catch (e) {
+                    console.log('Error loading assessment config:', e);
+                }
+            }
+        }
+
+        // Quick Grading Function
+        function showQuickGrading() {
+            if (!classSystem.currentClass) {
+                alert('❌ Please select a class first!');
+                return;
+            }
+
+            const classData = classSystem.classes[classSystem.currentClass];
+            if (!classData || classData.students.length === 0) {
+                alert('❌ No students in this class!');
+                return;
+            }
+
+            if (classData.assignments.length === 0) {
+                alert('❌ Please add at least one assessment first!');
+                return;
+            }
+
+            // Create quick grading modal
+            const modal = document.createElement('div');
+            modal.id = 'quickGradingModal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: white;
+                padding: 30px;
+                border-radius: 15px;
+                max-width: 600px;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            `;
+
+            modalContent.innerHTML = `
+                <h2>⚡ Quick Grade Entry</h2>
+                <p>Select assessment and enter grades quickly for all students</p>
+                
+                <div style="margin: 20px 0;">
+                    <label><strong>Assessment:</strong></label>
+                    <select id="quickGradeAssignment" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        ${classData.assignments.map(assignment => 
+                            `<option value="${assignment}">${assignment}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+
+                <div id="quickGradeStudents" style="max-height: 400px; overflow-y: auto;">
+                    ${classData.students.map(student => `
+                        <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                            <span style="flex: 1; font-weight: 500;">${student.name}</span>
+                            <input type="number" 
+                                   id="grade_${student.id}" 
+                                   min="0" 
+                                   max="100" 
+                                   placeholder="Grade"
+                                   style="width: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 5px;"
+                                   value="${student.grades[document.getElementById('quickGradeAssignment')?.value] || ''}">
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button onclick="applyQuickGrades()" style="flex: 1; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        💾 Save All Grades
+                    </button>
+                    <button onclick="closeQuickGrading()" style="flex: 1; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        ❌ Cancel
+                    </button>
+                </div>
+            `;
+
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            // Update student grades when assignment changes
+            const assignmentSelect = document.getElementById('quickGradeAssignment');
+            assignmentSelect.addEventListener('change', function() {
+                const selectedAssignment = this.value;
+                classData.students.forEach(student => {
+                    const gradeInput = document.getElementById(`grade_${student.id}`);
+                    gradeInput.value = student.grades[selectedAssignment] || '';
+                });
+            });
+        }
+
+        function applyQuickGrades() {
+            const selectedAssignment = document.getElementById('quickGradeAssignment').value;
+            const classData = classSystem.classes[classSystem.currentClass];
+            
+            let updatedCount = 0;
+            classData.students.forEach(student => {
+                const gradeInput = document.getElementById(`grade_${student.id}`);
+                const grade = parseFloat(gradeInput.value);
+                
+                if (!isNaN(grade) && grade >= 0 && grade <= 100) {
+                    student.grades[selectedAssignment] = grade;
+                    updatedCount++;
+                }
+            });
+
+            classSystem.saveDataToStorage();
+            classSystem.renderClassRecord();
+            classSystem.updateStatistics();
+            
+            closeQuickGrading();
+            alert(`✅ Successfully updated ${updatedCount} grades for "${selectedAssignment}"!`);
+        }
+
+        function closeQuickGrading() {
+            const modal = document.getElementById('quickGradingModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Enhanced addAssignmentColumn to include assessment type
+        const originalAddAssignmentColumn = classSystem.addAssignmentColumn;
+        classSystem.addAssignmentColumn = function() {
+            const assignmentName = document.getElementById('assignmentName').value.trim();
+            const assessmentType = document.getElementById('assessmentType').value;
+            
+            if (!assignmentName) {
+                alert('❌ Please enter an assessment name');
+                return;
+            }
+
+            if (!this.currentClass) {
+                alert('❌ Please select a class first');
+                return;
+            }
+
+            const fullAssignmentName = `${assessmentType}: ${assignmentName}`;
+            const classData = this.classes[this.currentClass];
+            
+            if (classData.assignments.includes(fullAssignmentName)) {
+                alert('❌ This assessment already exists');
+                return;
+            }
+
+            classData.assignments.push(fullAssignmentName);
+            
+            // Initialize grades for all students
+            classData.students.forEach(student => {
+                if (!student.grades[fullAssignmentName]) {
+                    student.grades[fullAssignmentName] = 0;
+                }
+            });
+
+            this.saveDataToStorage();
+            this.renderClassRecord();
+            this.updateStatistics();
+            
+            document.getElementById('assignmentName').value = '';
+            this.showSuccessMessage(`✅ ${assessmentType} "${assignmentName}" added successfully!`);
+        };
 
         // Add CSS animations
         const style = document.createElement('style');
