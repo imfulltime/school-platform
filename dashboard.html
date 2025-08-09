@@ -683,28 +683,22 @@
         }
 
         // Update greeting based on time of day
-        function updateGreeting() {
-            // Get teacher name from profile
-            const savedProfile = localStorage.getItem('schoolPlatform_teacherProfile');
+        async function updateGreeting() {
             let teacherName = 'Teacher';
-            
-            if (savedProfile) {
-                try {
-                    const profile = JSON.parse(savedProfile);
-                    teacherName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Teacher';
-                } catch (e) {
-                    console.log('Error loading teacher name:', e);
+            try {
+                if (window.dataService) {
+                    const profile = await window.dataService.getTeacherProfile();
+                    if (profile) {
+                        teacherName = `${profile.first_name || profile.firstName || ''} ${profile.last_name || profile.lastName || ''}`.trim() || 'Teacher';
+                    }
                 }
+            } catch (e) {
+                console.log('Error loading teacher name:', e.message);
             }
-            
             const hour = new Date().getHours();
             const welcomeElement = document.querySelector('.welcome h1');
             const headerWelcome = document.getElementById('welcomeMessage');
-            
-            // Update header
             headerWelcome.textContent = `Welcome, ${teacherName}`;
-            
-            // Update main greeting
             if (hour < 12) {
                 welcomeElement.textContent = `Good Morning, ${teacherName}! 🌅`;
             } else if (hour < 17) {

@@ -1913,17 +1913,30 @@
             initializeSystem();
         }
         
-        function initializeSystem() {
+        async function initializeSystem() {
             try {
-                // Check localStorage availability
+                // Ensure user is authenticated and hydrate from Supabase first
+                if (window.authService && window.dataService) {
+                    await window.authService.initialize();
+                    const ok = await window.authService.requireAuth();
+                    if (ok) {
+                        await window.dataService.initialize();
+                        // Hydrate local keys used by legacy UI so data loads from cloud immediately
+                        await hydrateStudentsData();
+                    } else {
+                        return;
+                    }
+                }
+
+                // Check localStorage availability (legacy UI still reads some keys)
                 testLocalStorage();
-                
+
                 profileSystem = new StudentProfileSystem();
                 console.log('✅ Student Profile System initialized successfully');
-                
+
                 // Load and display any existing data
                 displayDataStatus();
-                
+
             } catch (error) {
                 console.error('❌ Failed to initialize Student Profile System:', error);
                 // Fallback: try again in 100ms
@@ -1937,6 +1950,36 @@
                         showInitializationError();
                     }
                 }, 100);
+            }
+        }
+
+        // Hydrate localStorage keys from Supabase so the legacy UI renders cloud data
+        async function hydrateStudentsData() {
+            try {
+                const [profilesObj, classesObj] = await Promise.all([
+                    (async () => {
+                        const profiles = await window.dataService.getStudentProfiles();
+                        return profiles || {};
+                    })(),
+                    (async () => {
+                        const classes = await window.dataService.getClassRecords();
+                        return classes || {};
+                    })()
+                ]);
+
+                // Teacher profile (optional)
+                let teacher = {};
+                try { teacher = await window.dataService.getTeacherProfile(); } catch (e) {}
+
+                localStorage.setItem('schoolPlatform_studentProfiles', JSON.stringify(profilesObj));
+                localStorage.setItem('schoolPlatform_classRecords', JSON.stringify(classesObj));
+                if (teacher && Object.keys(teacher).length > 0) {
+                    localStorage.setItem('schoolPlatform_teacherProfile', JSON.stringify(teacher));
+                }
+
+                console.log('☁️ Hydrated students/classes from Supabase');
+            } catch (e) {
+                console.warn('Hydration failed:', e.message);
             }
         }
         
@@ -2375,79 +2418,41 @@
             initializeFormHandler();
         }
 
-        function saveDetailedStudentProfile(studentData) {
+        async function saveDetailedStudentProfile(studentData) {
             try {
-                // Save to a separate detailed profiles storage
+                if (window.dataService) {
+                    await window.dataService.saveStudentProfile(studentData);
+                }
                 const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles') || '{}';
-                let profiles = {};
-                
-                try {
-                    profiles = JSON.parse(savedProfiles);
-                } catch (e) {
-                    console.log('Error loading student profiles, creating new:', e);
-                    profiles = {};
-                }
-                
+                const profiles = (() => { try { return JSON.parse(savedProfiles) } catch { return {} } })();
                 profiles[studentData.id] = studentData;
-                
-                // Force save with error handling
-                try {
-                    localStorage.setItem('schoolPlatform_studentProfiles', JSON.stringify(profiles));
-                    console.log(`✅ Student profile saved for ${studentData.name} (ID: ${studentData.id})`);
-                    
-                    // Verify the save worked
-                    const verification = localStorage.getItem('schoolPlatform_studentProfiles');
-                    if (!verification || !JSON.parse(verification)[studentData.id]) {
-                        throw new Error('Save verification failed');
-                    }
-                } catch (saveError) {
-                    console.error('❌ Failed to save student profile:', saveError);
-                    alert('⚠️ Warning: Student profile may not have been saved properly. Please try again.');
-                }
-                
-                // Trigger sync if available
-                if (window.syncService && window.syncService.isEnabled) {
-                    window.syncService.syncToSupabase('schoolPlatform_studentProfiles', JSON.stringify(profiles));
-                }
+                localStorage.setItem('schoolPlatform_studentProfiles', JSON.stringify(profiles));
+                console.log(`✅ Student profile saved (cloud + local) for ${studentData.name}`);
             } catch (error) {
-                console.error('❌ Critical error saving student profile:', error);
-                alert('❌ Failed to save student profile. Please check your browser settings and try again.');
+                console.error('❌ Error saving student profile:', error);
+                alert('❌ Failed to save student profile online. Please try again.');
             }
         }
 
-        function addStudentToClassRecords(studentData) {
-            const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
-            let classes = {};
-            
-            if (savedClassRecords) {
-                try {
-                    classes = JSON.parse(savedClassRecords);
-                } catch (e) {
-                    console.log('Error loading class records:', e);
+        async function addStudentToClassRecords(studentData) {
+            try {
+                const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
+                let classes = (() => { try { return JSON.parse(savedClassRecords) } catch { return {} } })();
+                if (!studentData.primaryClass) return;
+                if (!classes[studentData.primaryClass]) {
+                    classes[studentData.primaryClass] = { name: studentData.primaryClass, students: [] };
                 }
-            }
-            
-            // Add student to the selected class (only if a class is selected)
-            if (studentData.primaryClass && classes[studentData.primaryClass]) {
-                const basicStudentData = {
-                    name: studentData.name,
-                    id: studentData.id,
-                    grades: {}
-                };
-                
-                // Check if student is already in this class
-                const existingStudent = classes[studentData.primaryClass].students.find(s => s.id === studentData.id);
-                if (!existingStudent) {
-                    classes[studentData.primaryClass].students.push(basicStudentData);
+                const exists = classes[studentData.primaryClass].students.find(s => s.id === studentData.id);
+                if (!exists) {
+                    classes[studentData.primaryClass].students.push({ id: studentData.id, name: studentData.name, grades: {} });
+                    if (window.dataService) {
+                        await window.dataService.setClassRecords(classes);
+                    }
                     localStorage.setItem('schoolPlatform_classRecords', JSON.stringify(classes));
-                    console.log(`✅ Student ${studentData.name} added to class ${studentData.primaryClass}`);
-                } else {
-                    console.log(`ℹ️ Student ${studentData.name} already exists in class ${studentData.primaryClass}`);
+                    console.log(`✅ Student ${studentData.name} added to class ${studentData.primaryClass} (cloud + local)`);
                 }
-            } else if (studentData.primaryClass && !classes[studentData.primaryClass]) {
-                console.log(`⚠️ Class "${studentData.primaryClass}" not found. Student profile saved but not added to any class.`);
-            } else {
-                console.log(`ℹ️ No class selected. Student profile saved without class assignment.`);
+            } catch (e) {
+                console.error('❌ Error adding student to class records:', e);
             }
         }
 
