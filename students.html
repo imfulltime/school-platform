@@ -1898,8 +1898,97 @@
             }
         }
 
-        // Initialize the system
-        const profileSystem = new StudentProfileSystem();
+        // Initialize the system when DOM is ready
+        let profileSystem;
+        
+        // Ensure DOM is loaded before initializing
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeSystem);
+        } else {
+            initializeSystem();
+        }
+        
+        function initializeSystem() {
+            try {
+                // Check localStorage availability
+                testLocalStorage();
+                
+                profileSystem = new StudentProfileSystem();
+                console.log('✅ Student Profile System initialized successfully');
+                
+                // Load and display any existing data
+                displayDataStatus();
+                
+            } catch (error) {
+                console.error('❌ Failed to initialize Student Profile System:', error);
+                // Fallback: try again in 100ms
+                setTimeout(() => {
+                    try {
+                        profileSystem = new StudentProfileSystem();
+                        console.log('✅ Student Profile System initialized on retry');
+                        displayDataStatus();
+                    } catch (retryError) {
+                        console.error('❌ Failed to initialize even on retry:', retryError);
+                        showInitializationError();
+                    }
+                }, 100);
+            }
+        }
+        
+        function testLocalStorage() {
+            try {
+                const test = 'test';
+                localStorage.setItem(test, test);
+                localStorage.removeItem(test);
+                console.log('✅ localStorage is working');
+                return true;
+            } catch (e) {
+                console.error('❌ localStorage is not available:', e);
+                alert('⚠️ Warning: Browser storage is not available. Data will not be saved between sessions.');
+                return false;
+            }
+        }
+        
+        function displayDataStatus() {
+            const studentProfiles = localStorage.getItem('schoolPlatform_studentProfiles');
+            const classRecords = localStorage.getItem('schoolPlatform_classRecords');
+            
+            if (studentProfiles) {
+                try {
+                    const profiles = JSON.parse(studentProfiles);
+                    const count = Object.keys(profiles).length;
+                    console.log(`📊 Found ${count} student profiles in storage`);
+                } catch (e) {
+                    console.error('❌ Corrupted student profiles data:', e);
+                }
+            }
+            
+            if (classRecords) {
+                try {
+                    const classes = JSON.parse(classRecords);
+                    const count = Object.keys(classes).length;
+                    console.log(`📚 Found ${count} class records in storage`);
+                } catch (e) {
+                    console.error('❌ Corrupted class records data:', e);
+                }
+            }
+        }
+        
+        function showInitializationError() {
+            const container = document.getElementById('studentsContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #dc3545;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                        <h3>System Initialization Error</h3>
+                        <p>The student management system failed to initialize properly.</p>
+                        <button onclick="location.reload()" style="padding: 12px 24px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 15px;">
+                            🔄 Reload Page
+                        </button>
+                    </div>
+                `;
+            }
+        }
 
         // Photo Upload Functions
         let currentPhoto = null;
@@ -2039,30 +2128,59 @@
             profileSystem.sortStudents();
         }
 
-        // Add Student Profile Functions
-        function showAddStudentModal() {
-            // Reset form first
-            document.getElementById('addStudentForm').reset();
-            
-            // Reset photo without confirmation dialog
-            currentPhoto = null;
-            const photoPreview = document.getElementById('photoPreview');
-            const uploadArea = document.getElementById('uploadArea');
-            if (photoPreview) photoPreview.style.display = 'none';
-            if (uploadArea) uploadArea.style.display = 'block';
-            
-            // Populate class dropdown
-            profileSystem.populateAddStudentClassFilter();
-            
-            // Generate next student ID
-            generateNextStudentId();
-            
-            // Set default values
-            document.getElementById('enrollmentStatus').value = 'Active';
-            const currentYear = new Date().getFullYear();
-            document.getElementById('academicYear').value = currentYear + '-' + (currentYear + 1);
-            
-            document.getElementById('addStudentModal').style.display = 'block';
+        // Add Student Profile Functions - Make globally available
+        window.showAddStudentModal = function() {
+            try {
+                console.log('🎯 Opening add student modal...');
+                
+                // Reset form first
+                const form = document.getElementById('addStudentForm');
+                if (form) {
+                    form.reset();
+                } else {
+                    console.error('❌ Add student form not found!');
+                    return;
+                }
+                
+                // Reset photo without confirmation dialog
+                currentPhoto = null;
+                const photoPreview = document.getElementById('photoPreview');
+                const uploadArea = document.getElementById('uploadArea');
+                if (photoPreview) photoPreview.style.display = 'none';
+                if (uploadArea) uploadArea.style.display = 'block';
+                
+                // Populate class dropdown
+                if (profileSystem && profileSystem.populateAddStudentClassFilter) {
+                    profileSystem.populateAddStudentClassFilter();
+                } else {
+                    console.log('⚠️ Profile system not ready, will populate classes later');
+                }
+                
+                // Generate next student ID
+                generateNextStudentId();
+                
+                // Set default values
+                const enrollmentStatus = document.getElementById('enrollmentStatus');
+                const academicYear = document.getElementById('academicYear');
+                
+                if (enrollmentStatus) enrollmentStatus.value = 'Active';
+                if (academicYear) {
+                    const currentYear = new Date().getFullYear();
+                    academicYear.value = currentYear + '-' + (currentYear + 1);
+                }
+                
+                // Show modal
+                const modal = document.getElementById('addStudentModal');
+                if (modal) {
+                    modal.style.display = 'block';
+                    console.log('✅ Add student modal opened successfully');
+                } else {
+                    console.error('❌ Add student modal not found!');
+                }
+            } catch (error) {
+                console.error('❌ Error opening add student modal:', error);
+                alert('Error opening add student form. Please refresh the page and try again.');
+            }
         }
 
         // Generate next student ID automatically
@@ -2090,23 +2208,32 @@
             document.getElementById('studentId').value = nextId;
         }
 
-        function closeAddStudentModal() {
-            document.getElementById('addStudentModal').style.display = 'none';
-            document.getElementById('addStudentForm').reset();
-            
-            // Reset photo without confirmation dialog
-            currentPhoto = null;
-            const photoPreview = document.getElementById('photoPreview');
-            const uploadArea = document.getElementById('uploadArea');
-            if (photoPreview) photoPreview.style.display = 'none';
-            if (uploadArea) uploadArea.style.display = 'block';
-            
-            // Generate new student ID for next use
-            generateStudentId();
+        window.closeAddStudentModal = function() {
+            try {
+                const modal = document.getElementById('addStudentModal');
+                const form = document.getElementById('addStudentForm');
+                
+                if (modal) modal.style.display = 'none';
+                if (form) form.reset();
+                
+                // Reset photo without confirmation dialog
+                currentPhoto = null;
+                const photoPreview = document.getElementById('photoPreview');
+                const uploadArea = document.getElementById('uploadArea');
+                if (photoPreview) photoPreview.style.display = 'none';
+                if (uploadArea) uploadArea.style.display = 'block';
+                
+                console.log('✅ Add student modal closed');
+            } catch (error) {
+                console.error('❌ Error closing modal:', error);
+            }
         }
 
-        // Handle Add Student Form Submission
-        document.getElementById('addStudentForm').addEventListener('submit', function(e) {
+        // Handle Add Student Form Submission - Safe initialization
+        function initializeFormHandler() {
+            const form = document.getElementById('addStudentForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
             e.preventDefault();
             
             // Combine name fields
@@ -2230,21 +2357,57 @@
             }
             
             alert(successMessage);
-        });
+                });
+            } else {
+                console.error('❌ Add student form not found during initialization!');
+            }
+        }
+        
+        // Initialize form handler when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeFormHandler);
+        } else {
+            initializeFormHandler();
+        }
 
         function saveDetailedStudentProfile(studentData) {
-            // Save to a separate detailed profiles storage
-            const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles') || '{}';
-            let profiles = {};
-            
             try {
-                profiles = JSON.parse(savedProfiles);
-            } catch (e) {
-                console.log('Error loading student profiles:', e);
+                // Save to a separate detailed profiles storage
+                const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles') || '{}';
+                let profiles = {};
+                
+                try {
+                    profiles = JSON.parse(savedProfiles);
+                } catch (e) {
+                    console.log('Error loading student profiles, creating new:', e);
+                    profiles = {};
+                }
+                
+                profiles[studentData.id] = studentData;
+                
+                // Force save with error handling
+                try {
+                    localStorage.setItem('schoolPlatform_studentProfiles', JSON.stringify(profiles));
+                    console.log(`✅ Student profile saved for ${studentData.name} (ID: ${studentData.id})`);
+                    
+                    // Verify the save worked
+                    const verification = localStorage.getItem('schoolPlatform_studentProfiles');
+                    if (!verification || !JSON.parse(verification)[studentData.id]) {
+                        throw new Error('Save verification failed');
+                    }
+                } catch (saveError) {
+                    console.error('❌ Failed to save student profile:', saveError);
+                    alert('⚠️ Warning: Student profile may not have been saved properly. Please try again.');
+                }
+                
+                // Trigger sync if available
+                if (window.syncService && window.syncService.isEnabled) {
+                    window.syncService.syncToSupabase('schoolPlatform_studentProfiles', JSON.stringify(profiles));
+                }
+            } catch (error) {
+                console.error('❌ Critical error saving student profile:', error);
+                alert('❌ Failed to save student profile. Please check your browser settings and try again.');
             }
-            
-            profiles[studentData.id] = studentData;
-            localStorage.setItem('schoolPlatform_studentProfiles', JSON.stringify(profiles));
         }
 
         function addStudentToClassRecords(studentData) {
@@ -2302,8 +2465,8 @@
         // Global variable to store parsed CSV data
         let parsedCSVData = [];
 
-        // Download CSV template
-        function downloadTemplate() {
+        // Download CSV template - Make globally available
+        window.downloadTemplate = function() {
             const templateData = [
                 ['firstName', 'lastName', 'middleInitial', 'studentId', 'dateOfBirth', 'gender', 'gradeLevel', 'section', 'primaryClass', 'enrollmentStatus', 'address', 'phone', 'email', 'parent1Name', 'parent1Phone', 'parent1Email', 'parent1Relation', 'parent2Name', 'parent2Phone', 'parent2Email', 'parent2Relation', 'previousSchool', 'medicalInfo', 'notes'],
                 ['John', 'Doe', 'M', '01', '2010-05-15', 'Male', '8', 'A', 'Grade 8-A', 'Active', '123 Main St, City', '555-0123', 'john.doe@email.com', 'Jane Doe', '555-0124', 'jane.doe@email.com', 'Mother', 'Bob Doe', '555-0125', 'bob.doe@email.com', 'Father', 'Elementary School ABC', 'No allergies', 'Excellent student'],
@@ -2316,8 +2479,8 @@
             alert('📋 Template downloaded!\n\n✅ Use this template to format your student data\n📝 Fill in the required fields: firstName, lastName, gradeLevel, section\n💡 Leave studentId empty for auto-generation\n🔄 Save as CSV and import back');
         }
 
-        // Export students to CSV
-        function exportStudentsCSV() {
+        // Export students to CSV - Make globally available
+        window.exportStudentsCSV = function() {
             const students = profileSystem.students;
             
             if (students.length === 0) {
@@ -2391,8 +2554,8 @@
             }
         }
 
-        // Show import modal
-        function showImportModal() {
+        // Show import modal - Make globally available
+        window.showImportModal = function() {
             document.getElementById('importModal').style.display = 'flex';
             
             // Reset form
@@ -2766,8 +2929,8 @@
         // ADVANCED SEARCH AND FILTERING
         // ============================================================================
 
-        // Toggle advanced search panel
-        function toggleAdvancedSearch() {
+        // Toggle advanced search panel - Make globally available
+        window.toggleAdvancedSearch = function() {
             const panel = document.getElementById('advancedSearchPanel');
             const btn = document.getElementById('advancedSearchBtn');
             
@@ -2785,8 +2948,8 @@
             }
         }
 
-        // Clear all filters
-        function clearAllFilters() {
+        // Clear all filters - Make globally available
+        window.clearAllFilters = function() {
             document.getElementById('searchInput').value = '';
             document.getElementById('statusFilter').value = '';
             document.getElementById('classFilter').value = '';
@@ -2987,12 +3150,98 @@
 
         // Override the existing filterStudents function
         window.filterStudents = filterStudents;
+        
+        // ============================================================================
+        // DATA RECOVERY AND DEBUG TOOLS
+        // ============================================================================
+        
+        // Add debug tools to window for troubleshooting
+        window.debugTools = {
+            checkData: function() {
+                console.log('=== DATA DEBUG ===');
+                const profiles = localStorage.getItem('schoolPlatform_studentProfiles');
+                const classes = localStorage.getItem('schoolPlatform_classRecords');
+                const teacher = localStorage.getItem('schoolPlatform_teacherProfile');
+                
+                console.log('Student Profiles:', profiles ? JSON.parse(profiles) : 'None');
+                console.log('Class Records:', classes ? JSON.parse(classes) : 'None');
+                console.log('Teacher Profile:', teacher ? JSON.parse(teacher) : 'None');
+                console.log('Profile System:', profileSystem);
+                
+                return {
+                    profiles: profiles ? Object.keys(JSON.parse(profiles)).length : 0,
+                    classes: classes ? Object.keys(JSON.parse(classes)).length : 0,
+                    hasTeacher: !!teacher
+                };
+            },
+            
+            clearAllData: function() {
+                if (confirm('⚠️ This will delete ALL data. Are you sure?')) {
+                    localStorage.removeItem('schoolPlatform_studentProfiles');
+                    localStorage.removeItem('schoolPlatform_classRecords');
+                    localStorage.removeItem('schoolPlatform_teacherProfile');
+                    localStorage.removeItem('schoolPlatform_attendance');
+                    location.reload();
+                }
+            },
+            
+            repairData: function() {
+                console.log('🔧 Attempting data repair...');
+                try {
+                    // Check and repair student profiles
+                    const profiles = localStorage.getItem('schoolPlatform_studentProfiles');
+                    if (profiles && profiles !== '{}') {
+                        const parsed = JSON.parse(profiles);
+                        let repaired = false;
+                        
+                        Object.values(parsed).forEach(student => {
+                            if (!student.enrollmentStatus) {
+                                student.enrollmentStatus = 'Active';
+                                repaired = true;
+                            }
+                            if (!student.dateCreated) {
+                                student.dateCreated = new Date().toISOString();
+                                repaired = true;
+                            }
+                        });
+                        
+                        if (repaired) {
+                            localStorage.setItem('schoolPlatform_studentProfiles', JSON.stringify(parsed));
+                            console.log('✅ Student profiles repaired');
+                        }
+                    }
+                    
+                    // Trigger refresh
+                    if (profileSystem && profileSystem.init) {
+                        profileSystem.init();
+                    }
+                    
+                    console.log('✅ Data repair completed');
+                } catch (error) {
+                    console.error('❌ Data repair failed:', error);
+                }
+            }
+        };
+        
+        // Expose debug tools globally
+        console.log('🛠️ Debug tools available: window.debugTools.checkData(), window.debugTools.clearAllData(), window.debugTools.repairData()');
+        
+        // Add data persistence check
+        setInterval(function() {
+            const profiles = localStorage.getItem('schoolPlatform_studentProfiles');
+            if (profiles && profiles !== '{}') {
+                const count = Object.keys(JSON.parse(profiles)).length;
+                if (count > 0) {
+                    console.log(`💾 Data check: ${count} student profiles in storage`);
+                }
+            }
+        }, 30000); // Check every 30 seconds
 
         // ============================================================================
         // PRINT FUNCTIONALITY
         // ============================================================================
 
-        function printStudentList() {
+        window.printStudentList = function() {
             // Get currently filtered students
             const currentStudents = getCurrentFilteredStudents();
             
