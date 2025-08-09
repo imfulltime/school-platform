@@ -702,6 +702,9 @@
                 <button onclick="toggleAdvancedSearch()" id="advancedSearchBtn" style="padding: 12px 16px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px;">
                     🔧 Filters
                 </button>
+                <button id="reloadDataBtn" style="padding: 12px 16px; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px;">
+                    🔄 Reload Data
+                </button>
                 <button onclick="clearAllFilters()" style="padding: 12px 16px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">
                     🗑️ Clear
                 </button>
@@ -2388,6 +2391,21 @@
             } else {
                 console.error('❌ Add student form not found during initialization!');
             }
+            const reloadBtn = document.getElementById('reloadDataBtn');
+            if (reloadBtn && window.profileSystem) {
+                reloadBtn.addEventListener('click', async () => {
+                    reloadBtn.disabled = true;
+                    reloadBtn.textContent = 'Refreshing...';
+                    try {
+                        await profileSystem.loadAllData();
+                        await profileSystem.compileStudentProfiles();
+                        profileSystem.renderStudents();
+                    } finally {
+                        reloadBtn.disabled = false;
+                        reloadBtn.textContent = '🔄 Reload Data';
+                    }
+                });
+            }
         }
         
         // Initialize form handler when DOM is ready
@@ -2471,51 +2489,28 @@
         // Export students to CSV - Make globally available
         window.exportStudentsCSV = function() {
             const students = profileSystem.students;
+            const detailed = profileSystem.detailedProfiles || {};
             
-            if (students.length === 0) {
+            if (!students || students.length === 0) {
                 alert('❌ No students to export');
                 return;
             }
             
-            const headers = ['firstName', 'lastName', 'middleInitial', 'studentId', 'dateOfBirth', 'gender', 'gradeLevel', 'section', 'primaryClass', 'enrollmentStatus', 'address', 'phone', 'email', 'parent1Name', 'parent1Phone', 'parent1Email', 'parent1Relation', 'parent2Name', 'parent2Phone', 'parent2Email', 'parent2Relation', 'previousSchool', 'medicalInfo', 'notes', 'createdBy', 'dateCreated'];
-            
+            const headers = ['ID', 'Name', 'Classes', 'Status'];
             const exportData = [headers];
             
-            students.forEach(student => {
-                const row = [
-                    student.firstName || '',
-                    student.lastName || '',
-                    student.middleInitial || '',
-                    student.id || '',
-                    student.dateOfBirth || '',
-                    student.gender || '',
-                    student.gradeLevel || '',
-                    student.section || '',
-                    student.primaryClass || '',
-                    student.enrollmentStatus || 'Active',
-                    student.address || '',
-                    student.phone || '',
-                    student.email || '',
-                    student.parent1?.name || '',
-                    student.parent1?.phone || '',
-                    student.parent1?.email || '',
-                    student.parent1?.relation || '',
-                    student.parent2?.name || '',
-                    student.parent2?.phone || '',
-                    student.parent2?.email || '',
-                    student.parent2?.relation || '',
-                    student.previousSchool || '',
-                    student.medicalInfo || '',
-                    student.notes || '',
-                    student.createdBy || '',
-                    student.dateCreated || ''
-                ];
-                exportData.push(row);
+            students.forEach(s => {
+                const dp = detailed[s.id] || {};
+                exportData.push([
+                    s.id,
+                    s.name,
+                    (s.classes || []).join('; '),
+                    dp.enrollment_status || dp.enrollmentStatus || 'Active'
+                ]);
             });
             
             const timestamp = new Date().toISOString().split('T')[0];
             downloadCSV(exportData, `students_export_${timestamp}.csv`);
-            
             alert(`✅ Exported ${students.length} students successfully!\n📁 File: students_export_${timestamp}.csv`);
         }
 

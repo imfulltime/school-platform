@@ -276,11 +276,7 @@
 
     <!-- Load Supabase from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Load Sync Service -->
-    <script type="module">
-        import syncService from './assets/js/services/SyncService.js';
-        window.syncService = syncService;
-    </script>
+    <!-- SyncService removed: online-only mode uses AuthService/DataService directly -->
     
     <!-- PWA Support -->
     <script src="./assets/js/pwa.js"></script>
