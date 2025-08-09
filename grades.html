@@ -979,9 +979,10 @@
                                     <button class="add-assignment" onclick="addAssignmentColumn()" style="margin-left: 15px;">➕ Add Assessment</button>
                                 </div>
                             </div>
-                            <div class="header-actions">
+                        <div class="header-actions">
                                 <button class="btn secondary" onclick="showQuickGrading()">⚡ Quick Grade Entry</button>
                                 <button class="btn" onclick="saveAllGrades()">💾 Save All Grades</button>
+                            <button class="btn" onclick="classSystem.loadSavedData().then(()=>classSystem.renderClassRecord())">🔄 Reload</button>
                             </div>
                         </div>
                         <div id="classRecordContainer"></div>
