@@ -790,6 +790,10 @@
             profileManager.saveProfile();
         }
 
+        function cancelEdit() {
+            profileManager.toggleEdit(); // Go back to view mode
+        }
+
         // Photo upload functions
         function uploadPhoto() {
             document.getElementById('photoUploadInput').click();

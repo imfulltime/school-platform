@@ -624,6 +624,21 @@
             saveDataToStorage(); // Auto-save bulk changes
         }
 
+        // Manual save function (called by Save Attendance button)
+        function saveAttendance() {
+            saveDataToStorage();
+            
+            // Show save confirmation
+            const statusEl = document.getElementById('saveStatus');
+            if (statusEl) {
+                statusEl.textContent = '✅ Attendance saved!';
+                statusEl.style.color = '#28a745';
+                setTimeout(() => {
+                    statusEl.textContent = '';
+                }, 3000);
+            }
+        }
+
         // Save attendance
         function saveAttendance() {
             if (!currentClass || !students[currentClass]) {
