@@ -2093,8 +2093,7 @@
                 return;
             }
 
-            const assessmentKey = `schoolPlatform_assessmentConfig_${classSystem.currentClass}`;
-            localStorage.setItem(assessmentKey, JSON.stringify(config));
+            try { if (window.dataService) { await window.dataService.setAssessmentConfig(classSystem.currentClass, config); } } catch {}
             
             alert('✅ Assessment configuration saved successfully!');
             document.getElementById('assessmentConfigCard').style.display = 'none';
@@ -2103,22 +2102,14 @@
         function loadAssessmentConfig() {
             if (!classSystem.currentClass) return;
 
-            const assessmentKey = `schoolPlatform_assessmentConfig_${classSystem.currentClass}`;
-            const savedConfig = localStorage.getItem(assessmentKey);
-            
-            if (savedConfig) {
-                try {
-                    const config = JSON.parse(savedConfig);
-                    
+            try {
+                if (window.dataService) {
+                    const config = await window.dataService.getAssessmentConfig(classSystem.currentClass);
                     // Clear existing custom categories
                     document.querySelectorAll('.weight-item.custom').forEach(item => item.remove());
-                    
-                    // Load configuration
                     Object.keys(config).forEach(categoryName => {
                         const categoryData = config[categoryName];
-                        
                         if (typeof categoryData === 'object' && categoryData.isCustom) {
-                            // Recreate custom category
                             const categoryId = categoryName.toLowerCase().replace(/[^a-z0-9]/g, '');
                             const weightGrid = document.getElementById('weightGrid');
                             const newItem = document.createElement('div');
@@ -2132,25 +2123,17 @@
                             `;
                             weightGrid.appendChild(newItem);
                         } else {
-                            // Load default category weights (backward compatibility)
                             const weight = typeof categoryData === 'object' ? categoryData.weight : categoryData;
                             const input = document.getElementById(`${categoryName.toLowerCase()}Weight`);
-                            if (input) {
-                                input.value = weight || 0;
-                            }
+                            if (input) input.value = weight || 0;
                         }
                     });
-                    
-                    // Update dropdown and weights
                     updateAssessmentTypeDropdown();
                     updateWeights();
-                } catch (e) {
-                    console.log('Error loading assessment config:', e);
+                    return;
                 }
-            } else {
-                // Default values for new configuration
-                updateAssessmentTypeDropdown();
-            }
+            } catch (e) { console.warn('Error loading assessment config from cloud:', e.message); }
+            updateAssessmentTypeDropdown();
         }
 
         // Quick Grading Function
