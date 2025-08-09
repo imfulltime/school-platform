@@ -99,7 +99,27 @@ class AuthService {
      * Get current user
      */
     getCurrentUser() {
-        return this.currentUser;
+        if (this.currentUser) {
+            // Return formatted user data with fallbacks
+            return {
+                id: this.currentUser.id,
+                email: this.currentUser.email,
+                name: this.currentUser.user_metadata?.full_name || this.currentUser.email?.split('@')[0] || 'User',
+                raw: this.currentUser // Keep raw data available if needed
+            };
+        }
+        
+        // Try to get from sessionStorage as fallback
+        try {
+            const stored = sessionStorage.getItem('currentUser');
+            if (stored) {
+                return JSON.parse(stored);
+            }
+        } catch (e) {
+            console.warn('Could not parse stored user data:', e);
+        }
+        
+        return null;
     }
 
     /**

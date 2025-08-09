@@ -652,13 +652,34 @@
         // Update UI with current user information
         function updateUserInterface() {
             const user = window.authService.getCurrentUser();
-            if (user) {
-                document.getElementById('welcomeMessage').textContent = `Welcome, ${user.name}`;
+            if (user && user.name) {
+                console.log('👤 Current user:', user);
+                
+                const welcomeEl = document.getElementById('welcomeMessage');
+                if (welcomeEl) {
+                    welcomeEl.textContent = `Welcome, ${user.name}`;
+                }
                 
                 // Update any profile avatars
                 const avatar = document.getElementById('headerProfileAvatar');
                 if (avatar) {
-                    avatar.textContent = user.name.charAt(0).toUpperCase();
+                    const initial = user.name.charAt(0).toUpperCase();
+                    avatar.textContent = initial;
+                    console.log('👤 Avatar updated with initial:', initial);
+                }
+            } else {
+                console.warn('⚠️ No user found or user has no name in updateUserInterface');
+                console.log('User object:', user);
+                
+                // Fallback for welcome message
+                const welcomeEl = document.getElementById('welcomeMessage');
+                if (welcomeEl) {
+                    welcomeEl.textContent = 'Welcome, User';
+                }
+                
+                const avatar = document.getElementById('headerProfileAvatar');
+                if (avatar) {
+                    avatar.textContent = 'U';
                 }
             }
         }

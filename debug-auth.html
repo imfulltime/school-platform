@@ -113,7 +113,30 @@
                 log('Checking authentication...', 'pending');
                 const isAuth = window.authService.isAuthenticated();
                 const currentUser = window.authService.getCurrentUser();
-                log(`Authentication status: ${isAuth}`, isAuth ? 'success' : 'warning', currentUser);
+                log(`Authentication status: ${isAuth}`, isAuth ? 'success' : 'warning');
+                
+                if (currentUser) {
+                    log('User details:', 'info', {
+                        id: currentUser.id,
+                        email: currentUser.email,
+                        name: currentUser.name,
+                        hasName: !!currentUser.name
+                    });
+                    
+                    // Test the specific charAt operation that was failing
+                    try {
+                        if (currentUser.name) {
+                            const initial = currentUser.name.charAt(0).toUpperCase();
+                            log(`✅ User name charAt test passed: "${initial}"`, 'success');
+                        } else {
+                            log('⚠️ User has no name property', 'warning');
+                        }
+                    } catch (e) {
+                        log('❌ charAt operation failed', 'error', e.message);
+                    }
+                } else {
+                    log('⚠️ No current user returned', 'warning');
+                }
                 
                 // Step 5: Test Supabase session
                 log('Getting Supabase session...', 'pending');
