@@ -756,14 +756,14 @@
             <div id="classView" style="display: none;">
                 <!-- Class Management -->
                 <div class="class-management">
-                    <div class="card fade-in">
+            <div class="card fade-in">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                             <h2>Add Student to Class</h2>
                             <button class="btn secondary" onclick="toggleAssessmentConfig()">⚙️ Configure Assessments</button>
                         </div>
                         
                         <!-- Student Selection Method -->
-                        <div class="form-group">
+                    <div class="form-group">
                             <label>Add Student Method:</label>
                             <div style="display: flex; gap: 15px; margin-bottom: 15px;">
                                 <label style="display: flex; align-items: center; gap: 5px;">
@@ -774,16 +774,16 @@
                                     <input type="radio" name="addMethod" value="manual" id="addManual" onchange="toggleAddMethod()">
                                     Add New Student Manually
                                 </label>
-                            </div>
+                    </div>
                         </div>
 
                         <!-- Existing Student Selection -->
                         <div id="existingStudentSection">
-                            <div class="form-group">
+                    <div class="form-group">
                                 <label for="unassignedStudents">Select Unassigned Students (Multiple):</label>
                                 <div id="unassignedStudentsContainer" class="multi-select-container">
                                     <div class="loading-message">Loading unassigned students...</div>
-                                </div>
+                    </div>
                                 <div class="multi-select-actions">
                                     <button type="button" class="btn secondary small" onclick="selectAllUnassigned()">✅ Select All</button>
                                     <button type="button" class="btn secondary small" onclick="clearAllUnassigned()">❌ Clear All</button>
@@ -800,7 +800,7 @@
                                 <div class="form-section">
                                     <h4 style="color: #667eea; margin-bottom: 15px;">📋 Basic Information</h4>
                                     <div style="display: grid; grid-template-columns: 1fr 1fr 100px; gap: 15px; margin-bottom: 15px;">
-                                        <div class="form-group">
+                    <div class="form-group">
                                             <label for="newFirstName">First Name *</label>
                                             <input type="text" id="newFirstName" required>
                                         </div>
@@ -842,7 +842,7 @@
                                         <div class="form-group">
                                             <label for="newGradeLevel">Grade Level *</label>
                                             <select id="newGradeLevel" required>
-                                                <option value="">Select Grade</option>
+                            <option value="">Select Grade</option>
                                                 <option value="K">Kindergarten</option>
                                                 <option value="1">1st Grade</option>
                                                 <option value="2">2nd Grade</option>
@@ -856,8 +856,8 @@
                                                 <option value="10">10th Grade</option>
                                                 <option value="11">11th Grade</option>
                                                 <option value="12">12th Grade</option>
-                                            </select>
-                                        </div>
+                        </select>
+                    </div>
                                         <div class="form-group">
                                             <label for="newAcademicYear">Academic Year</label>
                                             <select id="newAcademicYear">
@@ -888,7 +888,7 @@
                                 </div>
 
                                 <button type="submit" class="btn">Add New Student Profile</button>
-                            </form>
+                </form>
                         </div>
                     </div>
 
@@ -953,9 +953,9 @@
                                 <button class="btn" onclick="saveAssessmentConfig()">💾 Save Configuration</button>
                             </div>
                         </div>
-                    </div>
+            </div>
 
-                    <div class="card fade-in">
+            <div class="card fade-in">
                         <h2 id="classTitle">Class Record</h2>
                         <div class="assignment-header">
                             <div class="assignment-controls">
@@ -967,11 +967,11 @@
                                         <option value="Project">💼 Project</option>
                                         <option value="Assignment">📋 Assignment</option>
                                     </select>
-                                </div>
+                    </div>
                                 <div style="margin-top: 10px;">
                                     <strong>Assessment Name:</strong>
                                     <input type="text" id="assignmentName" placeholder="Enter assessment name" style="margin-left: 10px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 5px; width: 200px;">
-                                </div>
+                </div>
                                 <div style="margin-top: 10px;">
                                     <strong>Total Points:</strong>
                                     <input type="number" id="assignmentPoints" placeholder="100" min="1" max="1000" value="100" style="margin-left: 10px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 5px; width: 80px;">
@@ -985,26 +985,26 @@
                             </div>
                         </div>
                         <div id="classRecordContainer"></div>
-                    </div>
-                </div>
+            </div>
+        </div>
 
                 <!-- Statistics -->
-                <div class="card stats-card fade-in">
-                    <h2>Class Statistics</h2>
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <span class="stat-number" id="totalStudents">0</span>
-                            <div class="stat-label">Total Students</div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number" id="classAverage">0.0</span>
-                            <div class="stat-label">Class Average</div>
-                        </div>
-                        <div class="stat-item">
+        <div class="card stats-card fade-in">
+            <h2>Class Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number" id="totalStudents">0</span>
+                    <div class="stat-label">Total Students</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="classAverage">0.0</span>
+                    <div class="stat-label">Class Average</div>
+                </div>
+                <div class="stat-item">
                             <span class="stat-number" id="totalAssignments">0</span>
                             <div class="stat-label">Total Assignments</div>
-                        </div>
-                        <div class="stat-item">
+                </div>
+                <div class="stat-item">
                             <span class="stat-number" id="highestAverage">-</span>
                             <div class="stat-label">Highest Average</div>
                         </div>
@@ -1017,7 +1017,7 @@
     <!-- Load Supabase and Sync Service -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/sync-loader.js"></script>
-    
+
     <script>
         class ClassRecordSystem {
             constructor() {
@@ -1409,7 +1409,7 @@
                     currentClassData.students.push(student);
                     this.saveDataToStorage();
                     this.renderClassRecord();
-                    this.updateStatistics();
+                this.updateStatistics();
                     this.loadUnassignedStudents(); // Refresh the unassigned list
                     this.showSuccessMessage(`Student ${studentData.name} added to ${this.currentClass}`);
                 } catch (e) {
@@ -1569,7 +1569,7 @@
                                                title="Enter points earned">
                                         <div style="font-size: 9px; color: #666;">
                                             ${currentPercentage > 0 ? currentPercentage.toFixed(1) + '%' : '--'}
-                                        </div>
+                                </div>
                                     </div>
                                 </td>`;
                             }).join('')}
@@ -1600,7 +1600,7 @@
                                                title="Enter points earned">
                                         <div style="font-size: 10px; color: #667eea; font-weight: bold;">
                                             ${currentPercentage > 0 ? currentPercentage.toFixed(1) + '%' : '--'}
-                                        </div>
+                                    </div>
                                     </div>
                                 </td>`;
                             })() : '<td>--</td>'}
@@ -1619,7 +1619,7 @@
                 tableHTML += `
                         </tbody>
                     </table>
-                </div>
+                    </div>
                 `;
 
                 container.innerHTML = tableHTML;
