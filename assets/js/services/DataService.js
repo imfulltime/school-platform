@@ -1,181 +1,439 @@
 /**
- * Data Service - Centralized data management
- * Handles localStorage operations and data validation
+ * Data Service - Supabase-only data management
+ * Handles all data operations through Supabase (no localStorage fallback)
+ * REQUIRES AUTHENTICATION - Forces online-only mode
  */
 
 class DataService {
   constructor() {
-    this.storageKeys = {
-      classRecords: 'schoolPlatform_classRecords',
-      studentProfiles: 'schoolPlatform_studentProfiles',
-      teacherProfile: 'schoolPlatform_teacherProfile',
-      attendance: 'schoolPlatform_attendance',
-      assessmentConfigs: 'schoolPlatform_assessmentConfig'
-    };
-    
+    this.supabase = null;
+    this.isInitialized = false;
     this.cache = new Map();
     this.listeners = new Map();
   }
 
   /**
-   * Get data from localStorage with caching
-   * @param {string} key - Storage key
-   * @param {*} defaultValue - Default value if not found
-   * @returns {*} Parsed data or default value
+   * Initialize with Supabase client
    */
-  get(key, defaultValue = null) {
-    // Check cache first
-    if (this.cache.has(key)) {
-      return this.cache.get(key);
+  async initialize() {
+    if (this.isInitialized) return;
+    
+    // Ensure AuthService is available and user is authenticated
+    if (!window.authService || !window.authService.isAuthenticated()) {
+      throw new Error('❌ Authentication required for data operations. Please sign in first.');
     }
-
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored === null) return defaultValue;
-      
-      const parsed = JSON.parse(stored);
-      this.cache.set(key, parsed);
-      return parsed;
-    } catch (error) {
-      console.error(`Error parsing data for key ${key}:`, error);
-      return defaultValue;
-    }
+    
+    this.supabase = window.authService.getSupabaseClient();
+    this.isInitialized = true;
+    console.log('✅ DataService initialized with Supabase (online-only mode)');
   }
 
   /**
-   * Save data to localStorage and update cache
-   * @param {string} key - Storage key
-   * @param {*} data - Data to save
-   * @returns {boolean} Success status
+   * Ensure service is initialized and authenticated
    */
-  set(key, data) {
-    try {
-      const serialized = JSON.stringify(data);
-      localStorage.setItem(key, serialized);
-      this.cache.set(key, data);
-      
-      // Notify listeners
-      this.notifyListeners(key, data);
-      
-      return true;
-    } catch (error) {
-      console.error(`Error saving data for key ${key}:`, error);
-      return false;
+  async ensureInitialized() {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+    
+    if (!window.authService.isAuthenticated()) {
+      throw new Error('❌ Authentication required. Please sign in to access your data.');
     }
   }
 
   /**
-   * Remove data from localStorage and cache
-   * @param {string} key - Storage key
+   * Get current user ID
    */
-  remove(key) {
-    localStorage.removeItem(key);
-    this.cache.delete(key);
-    this.notifyListeners(key, null);
+  getCurrentUserId() {
+    return window.authService.getCurrentUserId();
   }
 
+  // =============================================================================
+  // STUDENT PROFILES
+  // =============================================================================
+
   /**
-   * Clear all data
+   * Get all student profiles for current user
    */
-  clear() {
-    Object.values(this.storageKeys).forEach(key => {
-      this.remove(key);
+  async getStudentProfiles() {
+    await this.ensureInitialized();
+    
+    const userId = this.getCurrentUserId();
+    
+    const { data, error } = await this.supabase
+      .from('student_profiles')
+      .select('*')
+      .eq('created_by', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      throw new Error(`Failed to load student profiles: ${error.message}`);
+    }
+    
+    // Convert to object format for compatibility
+    const profiles = {};
+    data.forEach(profile => {
+      profiles[profile.id || profile.student_id] = profile;
     });
+    
+    this.cache.set('studentProfiles', profiles);
+    this.notifyListeners('studentProfiles', profiles);
+    
+    return profiles;
   }
 
   /**
-   * Get class records
-   * @returns {Object} Class records data
+   * Save student profile
    */
-  getClassRecords() {
-    return this.get(this.storageKeys.classRecords, {});
+  async saveStudentProfile(studentData) {
+    await this.ensureInitialized();
+    
+    const userId = this.getCurrentUserId();
+    const profileData = {
+      ...studentData,
+      created_by: userId,
+      updated_at: new Date().toISOString()
+    };
+
+    // If no created_at, add it
+    if (!profileData.created_at) {
+      profileData.created_at = new Date().toISOString();
+    }
+
+    const { data, error } = await this.supabase
+      .from('student_profiles')
+      .upsert([profileData])
+      .select();
+    
+    if (error) {
+      throw new Error(`Failed to save student profile: ${error.message}`);
+    }
+    
+    // Update cache
+    const profiles = this.cache.get('studentProfiles') || {};
+    const savedProfile = data[0];
+    profiles[savedProfile.id || savedProfile.student_id] = savedProfile;
+    this.cache.set('studentProfiles', profiles);
+    this.notifyListeners('studentProfiles', profiles);
+    
+    console.log('✅ Student profile saved to Supabase:', savedProfile.first_name || savedProfile.name);
+    return savedProfile;
   }
 
   /**
-   * Save class records
-   * @param {Object} data - Class records data
+   * Delete student profile
    */
-  setClassRecords(data) {
-    return this.set(this.storageKeys.classRecords, data);
+  async deleteStudentProfile(studentId) {
+    await this.ensureInitialized();
+    
+    const { error } = await this.supabase
+      .from('student_profiles')
+      .delete()
+      .eq('id', studentId)
+      .eq('created_by', this.getCurrentUserId());
+    
+    if (error) {
+      throw new Error(`Failed to delete student profile: ${error.message}`);
+    }
+    
+    // Update cache
+    const profiles = this.cache.get('studentProfiles') || {};
+    delete profiles[studentId];
+    this.cache.set('studentProfiles', profiles);
+    this.notifyListeners('studentProfiles', profiles);
+    
+    console.log('🗑️ Student profile deleted from Supabase');
+    return true;
   }
 
-  /**
-   * Get student profiles
-   * @returns {Object} Student profiles data
-   */
-  getStudentProfiles() {
-    return this.get(this.storageKeys.studentProfiles, {});
-  }
+  // =============================================================================
+  // TEACHER PROFILE
+  // =============================================================================
 
   /**
-   * Save student profiles
-   * @param {Object} data - Student profiles data
+   * Get teacher profile for current user
    */
-  setStudentProfiles(data) {
-    return this.set(this.storageKeys.studentProfiles, data);
-  }
-
-  /**
-   * Get teacher profile
-   * @returns {Object} Teacher profile data
-   */
-  getTeacherProfile() {
-    return this.get(this.storageKeys.teacherProfile, {});
+  async getTeacherProfile() {
+    await this.ensureInitialized();
+    
+    const userId = this.getCurrentUserId();
+    
+    const { data, error } = await this.supabase
+      .from('teacher_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      throw new Error(`Failed to load teacher profile: ${error.message}`);
+    }
+    
+    const profile = data || {};
+    this.cache.set('teacherProfile', profile);
+    return profile;
   }
 
   /**
    * Save teacher profile
-   * @param {Object} data - Teacher profile data
    */
-  setTeacherProfile(data) {
-    return this.set(this.storageKeys.teacherProfile, data);
+  async setTeacherProfile(teacherData) {
+    await this.ensureInitialized();
+    
+    const userId = this.getCurrentUserId();
+    const profileData = {
+      ...teacherData,
+      user_id: userId,
+      updated_at: new Date().toISOString()
+    };
+
+    if (!profileData.created_at) {
+      profileData.created_at = new Date().toISOString();
+    }
+
+    const { data, error } = await this.supabase
+      .from('teacher_profiles')
+      .upsert([profileData])
+      .select();
+    
+    if (error) {
+      throw new Error(`Failed to save teacher profile: ${error.message}`);
+    }
+    
+    const savedProfile = data[0];
+    this.cache.set('teacherProfile', savedProfile);
+    this.notifyListeners('teacherProfile', savedProfile);
+    
+    console.log('✅ Teacher profile saved to Supabase');
+    return savedProfile;
+  }
+
+  // =============================================================================
+  // CLASSES
+  // =============================================================================
+
+  /**
+   * Get class records for current user
+   */
+  async getClassRecords() {
+    await this.ensureInitialized();
+    
+    const userId = this.getCurrentUserId();
+    
+    const { data, error } = await this.supabase
+      .from('classes')
+      .select('*')
+      .eq('created_by', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      throw new Error(`Failed to load classes: ${error.message}`);
+    }
+    
+    // Convert to object format for compatibility
+    const classes = {};
+    data.forEach(classRecord => {
+      classes[classRecord.class_name || classRecord.name] = classRecord;
+    });
+    
+    this.cache.set('classRecords', classes);
+    return classes;
   }
 
   /**
-   * Get attendance data
-   * @returns {Object} Attendance data
+   * Save class records
    */
-  getAttendance() {
-    return this.get(this.storageKeys.attendance, {});
+  async setClassRecords(classData) {
+    await this.ensureInitialized();
+    
+    const userId = this.getCurrentUserId();
+    const promises = [];
+    
+    // Convert object to array and save each class
+    Object.entries(classData).forEach(([className, classInfo]) => {
+      const data = {
+        ...classInfo,
+        class_name: className,
+        created_by: userId,
+        updated_at: new Date().toISOString()
+      };
+
+      if (!data.created_at) {
+        data.created_at = new Date().toISOString();
+      }
+
+      promises.push(
+        this.supabase
+          .from('classes')
+          .upsert([data])
+          .select()
+      );
+    });
+    
+    const results = await Promise.all(promises);
+    
+    // Check for errors
+    const errors = results.filter(result => result.error);
+    if (errors.length > 0) {
+      throw new Error(`Failed to save classes: ${errors[0].error.message}`);
+    }
+    
+    this.cache.set('classRecords', classData);
+    this.notifyListeners('classRecords', classData);
+    
+    console.log('✅ Class records saved to Supabase');
+    return classData;
+  }
+
+  // =============================================================================
+  // ATTENDANCE
+  // =============================================================================
+
+  /**
+   * Get attendance data
+   */
+  async getAttendance() {
+    await this.ensureInitialized();
+    
+    const userId = this.getCurrentUserId();
+    
+    const { data, error } = await this.supabase
+      .from('attendance_records')
+      .select('*')
+      .eq('created_by', userId)
+      .order('date', { ascending: false });
+    
+    if (error && error.code !== 'PGRST116') {
+      console.warn('Attendance table may not exist yet:', error.message);
+      return {};
+    }
+    
+    // Convert to expected format
+    const attendance = {};
+    data?.forEach(record => {
+      attendance[record.id || `${record.date}_${record.class_name}`] = record;
+    });
+    
+    this.cache.set('attendance', attendance);
+    return attendance;
   }
 
   /**
    * Save attendance data
-   * @param {Object} data - Attendance data
    */
-  setAttendance(data) {
-    return this.set(this.storageKeys.attendance, data);
+  async setAttendance(attendanceData) {
+    await this.ensureInitialized();
+    
+    const userId = this.getCurrentUserId();
+    const promises = [];
+    
+    // Convert object to array and save each record
+    Object.entries(attendanceData).forEach(([key, record]) => {
+      const data = {
+        ...record,
+        created_by: userId,
+        updated_at: new Date().toISOString()
+      };
+
+      if (!data.created_at) {
+        data.created_at = new Date().toISOString();
+      }
+
+      promises.push(
+        this.supabase
+          .from('attendance_records')
+          .upsert([data])
+          .select()
+      );
+    });
+    
+    try {
+      await Promise.all(promises);
+      this.cache.set('attendance', attendanceData);
+      this.notifyListeners('attendance', attendanceData);
+      console.log('✅ Attendance data saved to Supabase');
+    } catch (error) {
+      console.warn('Could not save attendance (table may not exist):', error.message);
+      // Don't throw error for attendance - table might not be created yet
+    }
+    
+    return attendanceData;
   }
+
+  // =============================================================================
+  // ASSESSMENT CONFIGS
+  // =============================================================================
 
   /**
    * Get assessment configuration for a specific class
-   * @param {string} className - Name of the class
-   * @returns {Object} Assessment configuration
    */
-  getAssessmentConfig(className) {
-    const key = `${this.storageKeys.assessmentConfigs}_${className}`;
-    return this.get(key, {
+  async getAssessmentConfig(className) {
+    // Default configuration
+    const defaultConfig = {
       Quiz: { weight: 20, label: '🧠 Quizzes', isCustom: false },
       Exam: { weight: 40, label: '📝 Exams', isCustom: false },
       Project: { weight: 25, label: '💼 Projects', isCustom: false },
       Assignment: { weight: 15, label: '📋 Assignments', isCustom: false }
-    });
+    };
+
+    try {
+      await this.ensureInitialized();
+      
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await this.supabase
+        .from('assessment_configs')
+        .select('*')
+        .eq('created_by', userId)
+        .eq('class_name', className)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.warn('Assessment config table may not exist:', error.message);
+        return defaultConfig;
+      }
+      
+      return data?.config || defaultConfig;
+    } catch (error) {
+      console.warn('Could not load assessment config:', error.message);
+      return defaultConfig;
+    }
   }
 
   /**
    * Save assessment configuration for a specific class
-   * @param {string} className - Name of the class
-   * @param {Object} config - Assessment configuration
    */
-  setAssessmentConfig(className, config) {
-    const key = `${this.storageKeys.assessmentConfigs}_${className}`;
-    return this.set(key, config);
+  async setAssessmentConfig(className, config) {
+    try {
+      await this.ensureInitialized();
+      
+      const userId = this.getCurrentUserId();
+      const data = {
+        class_name: className,
+        config: config,
+        created_by: userId,
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      };
+
+      await this.supabase
+        .from('assessment_configs')
+        .upsert([data]);
+      
+      console.log('✅ Assessment config saved to Supabase');
+    } catch (error) {
+      console.warn('Could not save assessment config (table may not exist):', error.message);
+      // Don't throw error - table might not be created yet
+    }
+    
+    return config;
   }
+
+  // =============================================================================
+  // UTILITY METHODS
+  // =============================================================================
 
   /**
    * Add event listener for data changes
-   * @param {string} key - Storage key to listen to
-   * @param {Function} callback - Callback function
    */
   addListener(key, callback) {
     if (!this.listeners.has(key)) {
@@ -186,8 +444,6 @@ class DataService {
 
   /**
    * Remove event listener
-   * @param {string} key - Storage key
-   * @param {Function} callback - Callback function
    */
   removeListener(key, callback) {
     if (this.listeners.has(key)) {
@@ -197,8 +453,6 @@ class DataService {
 
   /**
    * Notify listeners of data changes
-   * @param {string} key - Storage key
-   * @param {*} data - New data
    */
   notifyListeners(key, data) {
     if (this.listeners.has(key)) {
@@ -213,55 +467,107 @@ class DataService {
   }
 
   /**
-   * Export all data for backup
-   * @returns {Object} All stored data
+   * Export all user data for backup
    */
-  exportData() {
-    const data = {};
-    Object.entries(this.storageKeys).forEach(([name, key]) => {
-      data[name] = this.get(key);
-    });
-    return data;
+  async exportData() {
+    await this.ensureInitialized();
+    
+    const [studentProfiles, teacherProfile, classRecords, attendance] = await Promise.all([
+      this.getStudentProfiles(),
+      this.getTeacherProfile(),
+      this.getClassRecords(),
+      this.getAttendance()
+    ]);
+    
+    return {
+      studentProfiles,
+      teacherProfile,
+      classRecords,
+      attendance,
+      exportDate: new Date().toISOString(),
+      exportedBy: window.authService.getCurrentUser()?.email
+    };
   }
 
   /**
-   * Import data from backup
-   * @param {Object} data - Data to import
+   * Import data from backup (overwrites existing data)
    */
-  importData(data) {
-    Object.entries(data).forEach(([name, value]) => {
-      if (this.storageKeys[name]) {
-        this.set(this.storageKeys[name], value);
+  async importData(data) {
+    await this.ensureInitialized();
+    
+    try {
+      if (data.studentProfiles) {
+        await this.setStudentProfiles(data.studentProfiles);
       }
-    });
+      if (data.teacherProfile) {
+        await this.setTeacherProfile(data.teacherProfile);
+      }
+      if (data.classRecords) {
+        await this.setClassRecords(data.classRecords);
+      }
+      if (data.attendance) {
+        await this.setAttendance(data.attendance);
+      }
+      
+      console.log('✅ Data imported successfully to Supabase');
+    } catch (error) {
+      console.error('❌ Error importing data:', error);
+      throw error;
+    }
   }
 
   /**
-   * Get storage usage statistics
-   * @returns {Object} Storage statistics
+   * Clear all user data (requires confirmation)
    */
-  getStorageStats() {
-    let totalSize = 0;
-    const itemSizes = {};
+  async clear() {
+    await this.ensureInitialized();
+    
+    const userId = this.getCurrentUserId();
+    
+    try {
+      // Delete in reverse dependency order
+      await Promise.all([
+        this.supabase.from('attendance_records').delete().eq('created_by', userId),
+        this.supabase.from('assessment_configs').delete().eq('created_by', userId),
+        this.supabase.from('student_profiles').delete().eq('created_by', userId),
+        this.supabase.from('classes').delete().eq('created_by', userId),
+        this.supabase.from('teacher_profiles').delete().eq('user_id', userId)
+      ]);
+      
+      // Clear cache
+      this.cache.clear();
+      
+      console.log('🗑️ All user data cleared from Supabase');
+    } catch (error) {
+      console.error('❌ Error clearing data:', error);
+      throw error;
+    }
+  }
 
-    Object.entries(this.storageKeys).forEach(([name, key]) => {
-      const item = localStorage.getItem(key);
-      const size = item ? new Blob([item]).size : 0;
-      itemSizes[name] = size;
-      totalSize += size;
-    });
-
+  /**
+   * Get storage statistics (now shows Supabase usage)
+   */
+  async getStorageStats() {
+    await this.ensureInitialized();
+    
+    const data = await this.exportData();
+    const dataString = JSON.stringify(data);
+    const totalSize = new Blob([dataString]).size;
+    
     return {
       totalSize,
-      itemSizes,
-      totalSizeFormatted: this.formatBytes(totalSize)
+      totalSizeFormatted: this.formatBytes(totalSize),
+      source: 'Supabase Cloud Database',
+      recordCounts: {
+        students: Object.keys(data.studentProfiles || {}).length,
+        classes: Object.keys(data.classRecords || {}).length,
+        attendance: Object.keys(data.attendance || {}).length
+      }
     };
   }
 
   /**
    * Format bytes to human readable format
-   * @param {number} bytes - Number of bytes
-   * @returns {string} Formatted string
    */
   formatBytes(bytes) {
     if (bytes === 0) return '0 Bytes';
@@ -273,9 +579,6 @@ class DataService {
 
   /**
    * Validate data structure
-   * @param {string} type - Data type to validate
-   * @param {*} data - Data to validate
-   * @returns {boolean} Validation result
    */
   validateData(type, data) {
     try {
@@ -297,27 +600,21 @@ class DataService {
 
   /**
    * Validate student profile data
-   * @param {Object} data - Student profile data
-   * @returns {boolean} Validation result
    */
   validateStudentProfile(data) {
-    const required = ['id', 'firstName', 'lastName'];
+    const required = ['first_name', 'last_name'];
     return required.every(field => data && data[field]);
   }
 
   /**
    * Validate class record data
-   * @param {Object} data - Class record data
-   * @returns {boolean} Validation result
    */
   validateClassRecord(data) {
-    return data && data.students && Array.isArray(data.students);
+    return data && typeof data === 'object';
   }
 
   /**
    * Validate teacher profile data
-   * @param {Object} data - Teacher profile data
-   * @returns {boolean} Validation result
    */
   validateTeacherProfile(data) {
     return data && typeof data === 'object';
@@ -326,5 +623,8 @@ class DataService {
 
 // Create singleton instance
 const dataService = new DataService();
+
+// Make globally available
+window.dataService = dataService;
 
 export default dataService;
