@@ -1211,11 +1211,8 @@
                     createdBy: (JSON.parse(sessionStorage.getItem('currentUser') || '{}')).email || 
                               (JSON.parse(sessionStorage.getItem('currentUser') || '{}')).username || 'unknown',
                     createdByTeacher: (() => {
-                        const teacherProfile = JSON.parse(localStorage.getItem('schoolPlatform_teacherProfile') || '{}');
                         const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-                        return teacherProfile.firstName && teacherProfile.lastName ? 
-                            `${teacherProfile.firstName} ${teacherProfile.lastName}` : 
-                            (currentUser.name || currentUser.email || 'Unknown Teacher');
+                        return currentUser.name || currentUser.email || 'Unknown Teacher';
                     })(),
                     dateCreated: new Date().toISOString()
                 };
@@ -1242,49 +1239,36 @@
             }
 
             // Save student to profiles database
-            saveToStudentProfiles(studentProfile) {
-                let savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles');
-                let profiles = {};
-                
-                if (savedProfiles) {
-                    try {
-                        profiles = JSON.parse(savedProfiles);
-                    } catch (e) {
-                        console.log('Error loading student profiles:', e);
+            async saveToStudentProfiles(studentProfile) {
+                try {
+                    if (window.dataService) {
+                        await window.dataService.saveStudentProfile({
+                            id: studentProfile.id,
+                            name: `${studentProfile.firstName || ''} ${studentProfile.lastName || ''}`.trim(),
+                            first_name: studentProfile.firstName,
+                            last_name: studentProfile.lastName,
+                            enrollment_status: studentProfile.enrollmentStatus || 'Active'
+                        });
                     }
-                }
-
-                profiles[studentProfile.id] = studentProfile;
-                localStorage.setItem('schoolPlatform_studentProfiles', JSON.stringify(profiles));
+                } catch (e) { console.warn('Error saving student profile to cloud:', e.message); }
             }
 
             // Generate next student ID
-            generateNextStudentId() {
-                let savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles');
+            async generateNextStudentId() {
                 let nextId = 1;
-                
-                if (savedProfiles) {
-                    try {
-                        const profiles = JSON.parse(savedProfiles);
+                try {
+                    if (window.dataService) {
+                        const profiles = await window.dataService.getStudentProfiles();
                         const existingIds = Object.keys(profiles).map(id => parseInt(id)).filter(id => !isNaN(id));
-                        if (existingIds.length > 0) {
-                            nextId = Math.max(...existingIds) + 1;
-                        }
-                    } catch (e) {
-                        console.log('Error generating student ID:', e);
+                        if (existingIds.length > 0) nextId = Math.max(...existingIds) + 1;
                     }
-                }
-
-                // Also check class records for any student IDs
+                } catch (e) { console.warn('Error generating student ID:', e.message); }
                 Object.values(this.classes).forEach(classData => {
                     classData.students.forEach(student => {
                         const numericId = parseInt(student.id);
-                        if (!isNaN(numericId) && numericId >= nextId) {
-                            nextId = numericId + 1;
-                        }
+                        if (!isNaN(numericId) && numericId >= nextId) nextId = numericId + 1;
                     });
                 });
-
                 return String(nextId).padStart(2, '0');
             }
 
@@ -1303,22 +1287,18 @@
             }
 
             // Load unassigned students from student profiles with multi-select
-            loadUnassignedStudents() {
+            async loadUnassignedStudents() {
                 const container = document.getElementById('unassignedStudentsContainer');
                 container.innerHTML = '<div class="loading-message">Loading unassigned students...</div>';
 
                 // Get all students from student profiles
-                const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles');
                 let allStudents = [];
-                
-                if (savedProfiles) {
-                    try {
-                        const profiles = JSON.parse(savedProfiles);
+                try {
+                    if (window.dataService) {
+                        const profiles = await window.dataService.getStudentProfiles();
                         allStudents = Object.values(profiles);
-                    } catch (e) {
-                        console.log('Error loading student profiles:', e);
                     }
-                }
+                } catch (e) { console.warn('Error loading student profiles:', e.message); }
 
                 // Get student IDs assigned to THIS SPECIFIC CLASS (for multi-subject support)
                 const currentClassStudentIds = new Set();
