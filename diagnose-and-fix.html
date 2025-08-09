@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Supabase Diagnostic & Fix Tool</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .diagnostic-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #007bff;
+        }
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        .action-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+            margin: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .action-button:hover { background: #218838; transform: translateY(-2px); }
+        .action-button:disabled { background: #6c757d; cursor: not-allowed; transform: none; }
+        
+        .danger-button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+            margin: 8px;
+            font-weight: bold;
+        }
+        .danger-button:hover { background: #c82333; }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 15px 0;
+            white-space: pre-wrap;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 Supabase Diagnostic & Fix Tool</h1>
+        <p>Comprehensive diagnosis and automatic fixes for your School Platform</p>
+    </div>
+
+    <!-- Primary Diagnosis -->
+    <div class="diagnostic-card">
+        <h2>🎯 Primary Issue Analysis</h2>
+        <p><strong>Issue:</strong> "I'm still not saving anything from the website"</p>
+        <p><strong>Likely Causes:</strong></p>
+        <ul>
+            <li>❌ Backend SQL script not executed in Supabase</li>
+            <li>❌ Not logged in (authentication required for cloud sync)</li>
+            <li>❌ Row Level Security (RLS) policies preventing data access</li>
+            <li>❌ Supabase credentials incorrect or expired</li>
+        </ul>
+        
+        <button class="action-button" onclick="runFullDiagnosis()">🚀 Start Full Diagnosis</button>
+        <button class="action-button" onclick="showQuickFix()">⚡ Quick Fix Guide</button>
+    </div>
+
+    <!-- Diagnosis Results -->
+    <div class="diagnostic-card" id="diagnosisResults" style="display: none;">
+        <h2>📊 Diagnosis Results</h2>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+        <div id="testResults"></div>
+    </div>
+
+    <!-- Authentication Status -->
+    <div class="diagnostic-card">
+        <h2>👤 Authentication Status</h2>
+        <div id="authStatus">
+            <div class="status info">🔍 Checking authentication...</div>
+        </div>
+        <button class="action-button" onclick="checkAuthStatus()">🔄 Check Auth Status</button>
+        <button class="action-button" onclick="loginPrompt()">🔑 Go to Login</button>
+    </div>
+
+    <!-- Database Status -->
+    <div class="diagnostic-card">
+        <h2>🗃️ Database Status</h2>
+        <div id="databaseStatus">
+            <div class="status info">🔍 Checking database...</div>
+        </div>
+        <button class="action-button" onclick="checkDatabase()">🔄 Check Database</button>
+        <button class="action-button" onclick="showSQLInstructions()">📋 SQL Setup Instructions</button>
+    </div>
+
+    <!-- Data Operations -->
+    <div class="diagnostic-card">
+        <h2>💾 Data Operations Test</h2>
+        <div id="dataStatus">
+            <div class="status info">🔍 Ready to test data operations...</div>
+        </div>
+        <button class="action-button" onclick="testDataOperations()">🧪 Test Data Save/Load</button>
+        <button class="action-button" onclick="checkLocalStorage()">💿 Check Local Storage</button>
+    </div>
+
+    <!-- Quick Fixes -->
+    <div class="diagnostic-card">
+        <h2>⚡ Quick Fixes</h2>
+        <div class="grid">
+            <div>
+                <h4>🔧 For Database Issues:</h4>
+                <button class="action-button" onclick="showSQLScript()">📜 Show SQL Script</button>
+                <button class="action-button" onclick="testWithoutAuth()">🔄 Test Without Auth</button>
+            </div>
+            <div>
+                <h4>🔑 For Auth Issues:</h4>
+                <button class="action-button" onclick="createTestAccount()">👤 Create Test Account</button>
+                <button class="action-button" onclick="enableOfflineMode()">💿 Enable Offline Mode</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Tools -->
+    <div class="diagnostic-card">
+        <h2>🚨 Emergency Tools</h2>
+        <div class="status warning">
+            ⚠️ Use these tools only if other methods fail
+        </div>
+        <button class="danger-button" onclick="clearAllData()">🗑️ Clear All Data</button>
+        <button class="action-button" onclick="exportData()">💾 Export Current Data</button>
+        <button class="action-button" onclick="resetToDefaults()">🔄 Reset to Defaults</button>
+    </div>
+
+    <!-- Load Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        const supabaseUrl = 'https://dbztnbqtkhenfjhaughw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRienRuYnF0a2hlbmZqaGF1Z2h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzODc1NzMsImV4cCI6MjA2OTk2MzU3M30.trRjc2khddlb1RXR1CXeONhlEIYlJBlZ0lncvH5RJFs';
+        
+        let supabase = null;
+        let diagnosisResults = {};
+        
+        // Initialize Supabase
+        try {
+            supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        } catch (error) {
+            console.error('Failed to initialize Supabase:', error);
+        }
+        
+        function updateStatus(containerId, message, type = 'info', icon = '🔍') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = \`<div class="status \${type}">\${icon} \${message}</div>\`;
+        }
+        
+        function addStatus(containerId, message, type = 'info', icon = '🔍') {
+            const container = document.getElementById(containerId);
+            container.innerHTML += \`<div class="status \${type}">\${icon} \${message}</div>\`;
+        }
+        
+        async function runFullDiagnosis() {
+            document.getElementById('diagnosisResults').style.display = 'block';
+            const resultsContainer = document.getElementById('testResults');
+            resultsContainer.innerHTML = '';
+            
+            let progress = 0;
+            const updateProgress = (p) => {
+                progress = p;
+                document.getElementById('progressBar').style.width = p + '%';
+            };
+            
+            // Test 1: CDN and Client (20%)
+            updateProgress(20);
+            addStatus('testResults', 'Testing Supabase CDN and client creation...', 'info', '🔄');
+            
+            if (!window.supabase || !supabase) {
+                addStatus('testResults', 'CRITICAL: Supabase CDN failed to load', 'error', '❌');
+                return;
+            } else {
+                addStatus('testResults', 'Supabase CDN loaded successfully', 'success', '✅');
+            }
+            
+            // Test 2: Basic connectivity (40%)
+            updateProgress(40);
+            addStatus('testResults', 'Testing basic connectivity...', 'info', '🔄');
+            
+            try {
+                const response = await fetch(\`\${supabaseUrl}/rest/v1/\`, {
+                    headers: { 'apikey': supabaseKey }
+                });
+                
+                if (response.ok) {
+                    addStatus('testResults', 'Supabase API is accessible', 'success', '✅');
+                } else {
+                    addStatus('testResults', \`API returned status: \${response.status}\`, 'warning', '⚠️');
+                }
+            } catch (error) {
+                addStatus('testResults', \`Network error: \${error.message}\`, 'error', '❌');
+            }
+            
+            // Test 3: Authentication (60%)
+            updateProgress(60);
+            addStatus('testResults', 'Checking authentication status...', 'info', '🔄');
+            
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (user) {
+                    addStatus('testResults', \`Authenticated as: \${user.email}\`, 'success', '✅');
+                    diagnosisResults.authenticated = true;
+                } else {
+                    addStatus('testResults', 'Not authenticated (using localStorage only)', 'warning', '⚠️');
+                    diagnosisResults.authenticated = false;
+                }
+            } catch (error) {
+                addStatus('testResults', \`Auth check failed: \${error.message}\`, 'error', '❌');
+            }
+            
+            // Test 4: Database tables (80%)
+            updateProgress(80);
+            addStatus('testResults', 'Checking database tables...', 'info', '🔄');
+            
+            const tables = ['student_profiles', 'teacher_profiles', 'classes'];
+            let tablesExist = 0;
+            
+            for (const table of tables) {
+                try {
+                    const { error } = await supabase.from(table).select('count').limit(0);
+                    
+                    if (error && error.code === 'PGRST116') {
+                        addStatus('testResults', \`Table '\${table}' does not exist\`, 'error', '❌');
+                    } else if (error && error.code === '42501') {
+                        addStatus('testResults', \`Table '\${table}' exists (needs auth)\`, 'warning', '⚠️');
+                        tablesExist++;
+                    } else {
+                        addStatus('testResults', \`Table '\${table}' exists and accessible\`, 'success', '✅');
+                        tablesExist++;
+                    }
+                } catch (error) {
+                    addStatus('testResults', \`Table '\${table}' check failed\`, 'error', '❌');
+                }
+            }
+            
+            diagnosisResults.tablesExist = tablesExist === tables.length;
+            
+            // Test 5: Data operations (100%)
+            updateProgress(100);
+            addStatus('testResults', 'Testing data operations...', 'info', '🔄');
+            
+            if (diagnosisResults.authenticated && diagnosisResults.tablesExist) {
+                try {
+                    const testData = {
+                        first_name: 'Test',
+                        last_name: 'User',
+                        student_id: 'TEST-' + Date.now(),
+                        grade_level: '10',
+                        section: 'A'
+                    };
+                    
+                    const { data, error } = await supabase
+                        .from('student_profiles')
+                        .insert([testData])
+                        .select();
+                    
+                    if (error) {
+                        addStatus('testResults', \`Data save failed: \${error.message}\`, 'error', '❌');
+                    } else {
+                        addStatus('testResults', 'Data save/load working perfectly!', 'success', '✅');
+                        // Clean up test data
+                        if (data && data[0]) {
+                            await supabase.from('student_profiles').delete().eq('id', data[0].id);
+                        }
+                    }
+                } catch (error) {
+                    addStatus('testResults', \`Data operation error: \${error.message}\`, 'error', '❌');
+                }
+            } else {
+                addStatus('testResults', 'Skipping data operations (auth/database issues)', 'warning', '⚠️');
+            }
+            
+            // Final recommendation
+            addStatus('testResults', '', 'info', '');
+            addStatus('testResults', '🎯 DIAGNOSIS COMPLETE - Check recommendations below', 'info', '📋');
+            
+            // Show recommendations
+            showRecommendations();
+        }
+        
+        function showRecommendations() {
+            let recommendations = '';
+            
+            if (!diagnosisResults.authenticated) {
+                recommendations += \`
+                    <div class="status warning">
+                        🔑 <strong>MAIN ISSUE:</strong> You are not logged in!<br>
+                        The website saves data locally but needs authentication for cloud sync.<br>
+                        <strong>Solution:</strong> Go to auth.html and create an account or sign in.
+                    </div>
+                \`;
+            }
+            
+            if (!diagnosisResults.tablesExist) {
+                recommendations += \`
+                    <div class="status error">
+                        🗃️ <strong>CRITICAL ISSUE:</strong> Database tables don't exist!<br>
+                        You need to run the SQL script in your Supabase dashboard.<br>
+                        <strong>Solution:</strong> Execute backend-comprehensive-updates-final.sql
+                    </div>
+                \`;
+            }
+            
+            if (diagnosisResults.authenticated && diagnosisResults.tablesExist) {
+                recommendations += \`
+                    <div class="status success">
+                        ✅ <strong>GOOD NEWS:</strong> Everything is working!<br>
+                        Your data should be saving to both localStorage and Supabase.
+                    </div>
+                \`;
+            }
+            
+            document.getElementById('testResults').innerHTML += recommendations;
+        }
+        
+        async function checkAuthStatus() {
+            updateStatus('authStatus', 'Checking authentication...', 'info', '🔄');
+            
+            if (!supabase) {
+                updateStatus('authStatus', 'Supabase client not available', 'error', '❌');
+                return;
+            }
+            
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (user) {
+                    updateStatus('authStatus', \`✅ Logged in as: \${user.email}\`, 'success', '✅');
+                    addStatus('authStatus', \`User ID: \${user.id}\`, 'info', 'ℹ️');
+                    addStatus('authStatus', \`Created: \${new Date(user.created_at).toLocaleDateString()}\`, 'info', 'ℹ️');
+                } else {
+                    updateStatus('authStatus', '❌ Not logged in', 'warning', '⚠️');
+                    addStatus('authStatus', 'Data will only save to localStorage (local storage)', 'info', 'ℹ️');
+                    addStatus('authStatus', 'To save to cloud: Sign in at auth.html', 'info', '💡');
+                }
+            } catch (error) {
+                updateStatus('authStatus', \`Auth check failed: \${error.message}\`, 'error', '❌');
+            }
+        }
+        
+        async function checkDatabase() {
+            updateStatus('databaseStatus', 'Checking database tables...', 'info', '🔄');
+            
+            const tables = ['student_profiles', 'teacher_profiles', 'classes'];
+            let allGood = true;
+            
+            for (const table of tables) {
+                try {
+                    const { error } = await supabase.from(table).select('count').limit(0);
+                    
+                    if (error && error.code === 'PGRST116') {
+                        addStatus('databaseStatus', \`❌ Table '\${table}' missing\`, 'error', '❌');
+                        allGood = false;
+                    } else if (error && error.code === '42501') {
+                        addStatus('databaseStatus', \`⚠️ Table '\${table}' exists (RLS enabled)\`, 'warning', '⚠️');
+                    } else {
+                        addStatus('databaseStatus', \`✅ Table '\${table}' exists and accessible\`, 'success', '✅');
+                    }
+                } catch (error) {
+                    addStatus('databaseStatus', \`❌ Table '\${table}' check failed\`, 'error', '❌');
+                    allGood = false;
+                }
+            }
+            
+            if (!allGood) {
+                addStatus('databaseStatus', '🚨 You need to run the SQL script!', 'error', '🚨');
+            } else {
+                addStatus('databaseStatus', '✅ Database setup looks good!', 'success', '✅');
+            }
+        }
+        
+        async function testDataOperations() {
+            updateStatus('dataStatus', 'Testing data save/load...', 'info', '🔄');
+            
+            // Test localStorage first
+            try {
+                const testKey = 'test_' + Date.now();
+                const testData = { test: true, timestamp: Date.now() };
+                
+                localStorage.setItem(testKey, JSON.stringify(testData));
+                const retrieved = JSON.parse(localStorage.getItem(testKey));
+                localStorage.removeItem(testKey);
+                
+                if (retrieved && retrieved.test) {
+                    addStatus('dataStatus', '✅ localStorage working correctly', 'success', '✅');
+                } else {
+                    addStatus('dataStatus', '❌ localStorage test failed', 'error', '❌');
+                    return;
+                }
+            } catch (error) {
+                addStatus('dataStatus', \`❌ localStorage error: \${error.message}\`, 'error', '❌');
+                return;
+            }
+            
+            // Test Supabase if authenticated
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    addStatus('dataStatus', '⚠️ Not authenticated - only localStorage available', 'warning', '⚠️');
+                    return;
+                }
+                
+                // Try to save test data
+                const testStudent = {
+                    first_name: 'Test',
+                    last_name: 'Student',
+                    student_id: 'TEST-' + Date.now(),
+                    grade_level: '10',
+                    section: 'A',
+                    enrollment_status: 'Active'
+                };
+                
+                const { data, error } = await supabase
+                    .from('student_profiles')
+                    .insert([testStudent])
+                    .select();
+                
+                if (error) {
+                    addStatus('dataStatus', \`❌ Supabase save failed: \${error.message}\`, 'error', '❌');
+                } else {
+                    addStatus('dataStatus', '✅ Supabase save/load working!', 'success', '✅');
+                    
+                    // Clean up
+                    if (data && data[0]) {
+                        await supabase.from('student_profiles').delete().eq('id', data[0].id);
+                        addStatus('dataStatus', 'ℹ️ Test data cleaned up', 'info', 'ℹ️');
+                    }
+                }
+            } catch (error) {
+                addStatus('dataStatus', \`❌ Supabase test failed: \${error.message}\`, 'error', '❌');
+            }
+        }
+        
+        function checkLocalStorage() {
+            updateStatus('dataStatus', 'Checking existing local data...', 'info', '🔄');
+            
+            const keys = ['schoolPlatform_studentProfiles', 'schoolPlatform_classRecords', 'schoolPlatform_teacherProfile'];
+            let totalData = 0;
+            
+            for (const key of keys) {
+                const data = localStorage.getItem(key);
+                if (data && data !== '{}') {
+                    try {
+                        const parsed = JSON.parse(data);
+                        const count = Array.isArray(parsed) ? parsed.length : Object.keys(parsed).length;
+                        addStatus('dataStatus', \`✅ \${key}: \${count} records\`, 'success', '📊');
+                        totalData += count;
+                    } catch (error) {
+                        addStatus('dataStatus', \`❌ \${key}: corrupted data\`, 'error', '❌');
+                    }
+                } else {
+                    addStatus('dataStatus', \`ℹ️ \${key}: no data\`, 'info', 'ℹ️');
+                }
+            }
+            
+            addStatus('dataStatus', \`📊 Total local records: \${totalData}\`, 'info', '📊');
+        }
+        
+        function showQuickFix() {
+            const quickFix = \`
+🎯 QUICK FIX GUIDE for "Not Saving Data"
+
+1. 🔑 AUTHENTICATION (Most Common Issue):
+   • Go to: auth.html
+   • Create account or sign in
+   • Data saves locally but needs auth for cloud sync
+
+2. 🗃️ DATABASE SETUP:
+   • Run SQL script in Supabase dashboard
+   • Copy: backend-comprehensive-updates-final.sql
+   • Paste in SQL Editor and execute
+
+3. 🔄 TEST DATA SAVING:
+   • Go to students.html
+   • Click "Add Student Profile"
+   • Fill form and save
+   • Refresh page - data should persist
+
+4. 💾 LOCAL STORAGE (Backup):
+   • Data saves to browser storage automatically
+   • Works without internet or authentication
+   • Use debug tools: window.debugTools.checkData()
+            \`;
+            
+            alert(quickFix);
+        }
+        
+        function loginPrompt() {
+            if (confirm('Go to login page now?')) {
+                window.location.href = 'auth.html';
+            }
+        }
+        
+        function showSQLInstructions() {
+            const instructions = \`
+📋 SQL SETUP INSTRUCTIONS
+
+1. Open Supabase Dashboard:
+   • Go to: https://supabase.com/dashboard
+   • Select your project
+
+2. Navigate to SQL Editor:
+   • Click "SQL Editor" in sidebar
+   • Click "New Query"
+
+3. Copy SQL Script:
+   • Open: backend-comprehensive-updates-final.sql
+   • Copy entire contents
+
+4. Execute Script:
+   • Paste in SQL Editor
+   • Click "Run" button
+   • Wait for completion
+
+5. Verify Tables:
+   • Go to "Table Editor"
+   • Should see: student_profiles, teacher_profiles, classes
+
+This creates all necessary tables and security policies!
+            \`;
+            
+            alert(instructions);
+        }
+        
+        function showSQLScript() {
+            window.open('backend-comprehensive-updates-final.sql', '_blank');
+        }
+        
+        async function createTestAccount() {
+            const email = prompt('Enter email for test account:');
+            const password = prompt('Enter password (min 6 chars):');
+            
+            if (!email || !password || password.length < 6) {
+                alert('Invalid email or password too short');
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: { full_name: 'Test User' }
+                    }
+                });
+                
+                if (error) {
+                    alert(\`Account creation failed: \${error.message}\`);
+                } else {
+                    alert('✅ Test account created! Check email for verification.');
+                }
+            } catch (error) {
+                alert(\`Error: \${error.message}\`);
+            }
+        }
+        
+        function enableOfflineMode() {
+            localStorage.setItem('forceOfflineMode', 'true');
+            alert('✅ Offline mode enabled. Data will save to localStorage only.');
+        }
+        
+        function clearAllData() {
+            if (confirm('⚠️ This will delete ALL local data. Are you sure?')) {
+                const keys = Object.keys(localStorage).filter(key => key.startsWith('schoolPlatform_'));
+                keys.forEach(key => localStorage.removeItem(key));
+                alert('🗑️ All local data cleared.');
+            }
+        }
+        
+        function exportData() {
+            const allData = {};
+            const keys = Object.keys(localStorage).filter(key => key.startsWith('schoolPlatform_'));
+            
+            keys.forEach(key => {
+                allData[key] = localStorage.getItem(key);
+            });
+            
+            const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = \`school-platform-backup-\${new Date().toISOString().split('T')[0]}.json\`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function resetToDefaults() {
+            if (confirm('Reset all settings to defaults?')) {
+                localStorage.removeItem('forceOfflineMode');
+                alert('✅ Settings reset to defaults.');
+            }
+        }
+        
+        function testWithoutAuth() {
+            localStorage.setItem('testMode', 'true');
+            alert('✅ Test mode enabled. Try adding a student now.');
+            window.open('students.html', '_blank');
+        }
+        
+        // Auto-run auth check on load
+        window.addEventListener('load', () => {
+            checkAuthStatus();
+        });
+    </script>
+</body>
+</html>

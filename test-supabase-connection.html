@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Connection Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        .credentials {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-wrap: break-word;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        
+        .log {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Supabase Connection Diagnostics</h1>
+    
+    <div class="test-card">
+        <h2>📋 Current Configuration</h2>
+        <div class="credentials">
+            <strong>Supabase URL:</strong> https://dbztnbqtkhenfjhaughw.supabase.co<br>
+            <strong>API Key:</strong> eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRienRuYnF0a2hlbmZqaGF1Z2h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzODc1NzMsImV4cCI6MjA2OTk2MzU3M30.trRjc2khddlb1RXR1CXeONhlEIYlJBlZ0lncvH5RJFs
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Connection Tests</h2>
+        <button onclick="runAllTests()">🚀 Run All Tests</button>
+        <button onclick="clearLog()">🗑️ Clear Log</button>
+        <button onclick="testDatabaseSchema()">🗃️ Test Database Schema</button>
+        <button onclick="testDataOperations()">💾 Test Data Operations</button>
+        
+        <div id="testResults"></div>
+        <div id="testLog" class="log"></div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Quick Fixes</h2>
+        <button onclick="createMissingTables()">📋 Create Missing Tables</button>
+        <button onclick="runSQLScript()">🔨 Execute Backend SQL</button>
+        <button onclick="testLocalStorage()">💾 Test Local Storage</button>
+    </div>
+
+    <!-- Load Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        const supabaseUrl = 'https://dbztnbqtkhenfjhaughw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRienRuYnF0a2hlbmZqaGF1Z2h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzODc1NzMsImV4cCI6MjA2OTk2MzU3M30.trRjc2khddlb1RXR1CXeONhlEIYlJBlZ0lncvH5RJFs';
+        
+        let supabase = null;
+        let testLog = '';
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            testLog += `[${timestamp}] ${prefix} ${message}\n`;
+            document.getElementById('testLog').textContent = testLog;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            testLog = '';
+            document.getElementById('testLog').textContent = '';
+            document.getElementById('testResults').innerHTML = '';
+        }
+        
+        function showResult(test, success, message) {
+            const resultDiv = document.getElementById('testResults');
+            const className = success ? 'success' : 'error';
+            resultDiv.innerHTML += `<div class="${className}">${test}: ${message}</div>`;
+        }
+        
+        async function runAllTests() {
+            clearLog();
+            log('🚀 Starting comprehensive Supabase connection tests...');
+            
+            // Test 1: CDN Loading
+            await testCDNLoading();
+            
+            // Test 2: Client Creation
+            await testClientCreation();
+            
+            // Test 3: Basic Connection
+            await testBasicConnection();
+            
+            // Test 4: Authentication Status
+            await testAuthStatus();
+            
+            // Test 5: Database Schema
+            await testDatabaseSchema();
+            
+            // Test 6: Data Operations (if authenticated)
+            await testDataOperations();
+            
+            log('🏁 All tests completed!');
+        }
+        
+        async function testCDNLoading() {
+            log('Testing Supabase CDN loading...');
+            
+            if (typeof window.supabase === 'undefined') {
+                showResult('CDN Loading', false, 'Supabase library not loaded from CDN');
+                log('❌ Supabase CDN failed to load', 'error');
+                return false;
+            }
+            
+            showResult('CDN Loading', true, 'Supabase library loaded successfully');
+            log('✅ Supabase CDN loaded successfully', 'success');
+            return true;
+        }
+        
+        async function testClientCreation() {
+            log('Testing Supabase client creation...');
+            
+            try {
+                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                
+                if (!supabase) {
+                    throw new Error('Client creation returned null');
+                }
+                
+                showResult('Client Creation', true, 'Supabase client created successfully');
+                log('✅ Supabase client created', 'success');
+                return true;
+            } catch (error) {
+                showResult('Client Creation', false, `Failed: ${error.message}`);
+                log(`❌ Client creation failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testBasicConnection() {
+            log('Testing basic connection to Supabase...');
+            
+            if (!supabase) {
+                showResult('Basic Connection', false, 'No client available');
+                return false;
+            }
+            
+            try {
+                // Try a simple query that should work without authentication
+                const { data, error } = await supabase.from('student_profiles').select('count').limit(0);
+                
+                if (error && error.code === 'PGRST116') {
+                    // Table doesn't exist
+                    showResult('Basic Connection', false, 'Database tables not set up. Run the SQL script first!');
+                    log('⚠️ Tables not found - SQL script needs to be executed', 'warning');
+                    return false;
+                } else if (error && error.code === '42501') {
+                    // Permission denied but connection works
+                    showResult('Basic Connection', true, 'Connected but needs authentication');
+                    log('✅ Connected to Supabase (authentication required for data)', 'success');
+                    return true;
+                } else if (error) {
+                    throw error;
+                }
+                
+                showResult('Basic Connection', true, 'Connected and can access database');
+                log('✅ Full database access confirmed', 'success');
+                return true;
+            } catch (error) {
+                showResult('Basic Connection', false, `Connection failed: ${error.message}`);
+                log(`❌ Connection test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testAuthStatus() {
+            log('Testing authentication status...');
+            
+            if (!supabase) return false;
+            
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error) {
+                    log(`⚠️ Auth check error: ${error.message}`, 'warning');
+                }
+                
+                if (user) {
+                    showResult('Authentication', true, `Logged in as: ${user.email}`);
+                    log(`✅ Authenticated user: ${user.email}`, 'success');
+                    return true;
+                } else {
+                    showResult('Authentication', false, 'No authenticated user - using localStorage only');
+                    log('ℹ️ No authenticated user found', 'warning');
+                    return false;
+                }
+            } catch (error) {
+                showResult('Authentication', false, `Auth test failed: ${error.message}`);
+                log(`❌ Authentication test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testDatabaseSchema() {
+            log('Testing database schema...');
+            
+            if (!supabase) return false;
+            
+            const tables = ['student_profiles', 'teacher_profiles', 'classes'];
+            let allTablesExist = true;
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase.from(table).select('*').limit(1);
+                    
+                    if (error && error.code === 'PGRST116') {
+                        showResult(`Table: ${table}`, false, 'Does not exist');
+                        log(`❌ Table '${table}' not found`, 'error');
+                        allTablesExist = false;
+                    } else if (error && error.code === '42501') {
+                        showResult(`Table: ${table}`, true, 'Exists (needs auth for access)');
+                        log(`✅ Table '${table}' exists`, 'success');
+                    } else if (error) {
+                        showResult(`Table: ${table}`, false, `Error: ${error.message}`);
+                        log(`❌ Table '${table}' error: ${error.message}`, 'error');
+                        allTablesExist = false;
+                    } else {
+                        showResult(`Table: ${table}`, true, 'Exists and accessible');
+                        log(`✅ Table '${table}' exists and accessible`, 'success');
+                    }
+                } catch (error) {
+                    showResult(`Table: ${table}`, false, `Exception: ${error.message}`);
+                    log(`❌ Exception testing table '${table}': ${error.message}`, 'error');
+                    allTablesExist = false;
+                }
+            }
+            
+            return allTablesExist;
+        }
+        
+        async function testDataOperations() {
+            log('Testing data operations...');
+            
+            if (!supabase) return false;
+            
+            try {
+                // Test reading data
+                const { data: students, error: readError } = await supabase
+                    .from('student_profiles')
+                    .select('*')
+                    .limit(5);
+                
+                if (readError) {
+                    if (readError.code === '42501') {
+                        showResult('Data Read', false, 'Permission denied - sign in first');
+                        log('⚠️ Data access requires authentication', 'warning');
+                        return false;
+                    }
+                    throw readError;
+                }
+                
+                showResult('Data Read', true, `Found ${students?.length || 0} student records`);
+                log(`✅ Successfully read ${students?.length || 0} student records`, 'success');
+                
+                // Test writing data (only if we have permission)
+                const testStudent = {
+                    first_name: 'Test',
+                    last_name: 'Student',
+                    student_id: 'TEST-' + Date.now(),
+                    grade_level: '10',
+                    section: 'A',
+                    enrollment_status: 'Active'
+                };
+                
+                const { data: newStudent, error: writeError } = await supabase
+                    .from('student_profiles')
+                    .insert([testStudent])
+                    .select();
+                
+                if (writeError) {
+                    showResult('Data Write', false, `Write failed: ${writeError.message}`);
+                    log(`❌ Data write test failed: ${writeError.message}`, 'error');
+                    return false;
+                }
+                
+                showResult('Data Write', true, 'Successfully created test record');
+                log('✅ Data write test successful', 'success');
+                
+                // Clean up test record
+                if (newStudent && newStudent[0]) {
+                    await supabase
+                        .from('student_profiles')
+                        .delete()
+                        .eq('id', newStudent[0].id);
+                    log('🗑️ Test record cleaned up', 'info');
+                }
+                
+                return true;
+                
+            } catch (error) {
+                showResult('Data Operations', false, `Failed: ${error.message}`);
+                log(`❌ Data operations test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function createMissingTables() {
+            log('🔧 Attempting to create missing tables...');
+            
+            if (!supabase) {
+                log('❌ No Supabase client available', 'error');
+                return;
+            }
+            
+            // This is a basic attempt - full schema needs the SQL script
+            const createTableSQL = \`
+                CREATE TABLE IF NOT EXISTS student_profiles (
+                    id SERIAL PRIMARY KEY,
+                    first_name TEXT NOT NULL,
+                    last_name TEXT NOT NULL,
+                    student_id TEXT UNIQUE NOT NULL,
+                    grade_level TEXT,
+                    section TEXT,
+                    enrollment_status TEXT DEFAULT 'Active',
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                );
+            \`;
+            
+            try {
+                const { data, error } = await supabase.rpc('sql_exec', { sql: createTableSQL });
+                
+                if (error) {
+                    log(\`❌ Table creation failed: \${error.message}\`, 'error');
+                } else {
+                    log('✅ Basic table creation attempted', 'success');
+                    log('⚠️ For full functionality, run the complete SQL script', 'warning');
+                }
+            } catch (error) {
+                log(\`❌ Cannot create tables directly. You need to run the SQL script in Supabase dashboard.\`, 'error');
+            }
+        }
+        
+        function runSQLScript() {
+            log('📋 To run the complete SQL script:');
+            log('1. Go to your Supabase Dashboard');
+            log('2. Navigate to SQL Editor');
+            log('3. Copy the contents of backend-comprehensive-updates-final.sql');
+            log('4. Paste and execute the script');
+            log('5. This will create all necessary tables, views, and triggers');
+            
+            showResult('SQL Script', true, 'Instructions provided - check the log');
+        }
+        
+        function testLocalStorage() {
+            log('Testing localStorage functionality...');
+            
+            try {
+                // Test localStorage
+                const testKey = 'test_' + Date.now();
+                const testData = { message: 'test', timestamp: Date.now() };
+                
+                localStorage.setItem(testKey, JSON.stringify(testData));
+                const retrieved = JSON.parse(localStorage.getItem(testKey));
+                localStorage.removeItem(testKey);
+                
+                if (retrieved && retrieved.message === 'test') {
+                    showResult('Local Storage', true, 'Working properly');
+                    log('✅ localStorage is functioning correctly', 'success');
+                    
+                    // Check existing data
+                    const profiles = localStorage.getItem('schoolPlatform_studentProfiles');
+                    const classes = localStorage.getItem('schoolPlatform_classRecords');
+                    
+                    if (profiles) {
+                        const count = Object.keys(JSON.parse(profiles)).length;
+                        log(\`📊 Found \${count} student profiles in localStorage\`, 'info');
+                    }
+                    
+                    if (classes) {
+                        const count = Object.keys(JSON.parse(classes)).length;
+                        log(\`📚 Found \${count} class records in localStorage\`, 'info');
+                    }
+                    
+                    return true;
+                } else {
+                    throw new Error('Data integrity test failed');
+                }
+            } catch (error) {
+                showResult('Local Storage', false, \`Failed: \${error.message}\`);
+                log(\`❌ localStorage test failed: \${error.message}\`, 'error');
+                return false;
+            }
+        }
+        
+        // Auto-run basic tests on page load
+        window.addEventListener('load', async () => {
+            log('🌟 Supabase Connection Diagnostics Loaded');
+            log('🔍 Click "Run All Tests" to check your connection');
+            
+            // Quick CDN check
+            await testCDNLoading();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct API Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #e0e0e0; }
+        .test { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #2d5a2d; }
+        .error { background: #5a2d2d; }
+        .warning { background: #5a5a2d; }
+        .info { background: #2d2d5a; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #2a2a2a; padding: 15px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Direct Supabase API Test</h1>
+    
+    <button onclick="testCredentials()">🔑 Test Credentials</button>
+    <button onclick="testTables()">🗃️ Test Tables</button>
+    <button onclick="testAuth()">👤 Test Auth</button>
+    <button onclick="testInsert()">💾 Test Insert</button>
+    <button onclick="clearResults()">🗑️ Clear</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_URL = 'https://dbztnbqtkhenfjhaughw.supabase.co';
+        const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRienRuYnF0a2hlbmZqaGF1Z2h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzODc1NzMsImV4cCI6MjA2OTk2MzU3M30.trRjc2khddlb1RXR1CXeONhlEIYlJBlZ0lncvH5RJFs';
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testCredentials() {
+            log('🔑 Testing Supabase credentials...', 'info');
+            
+            try {
+                // Test basic API accessibility
+                const response = await fetch(`${API_URL}/rest/v1/`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': API_KEY,
+                        'Authorization': `Bearer ${API_KEY}`
+                    }
+                });
+                
+                log(`Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    log('✅ API endpoint is accessible', 'success');
+                    log('✅ API key is valid', 'success');
+                } else {
+                    const error = await response.text();
+                    log(`❌ API Error: ${error}`, 'error');
+                }
+                
+                return response.ok;
+            } catch (error) {
+                log(`❌ Network Error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testTables() {
+            log('🗃️ Testing database tables...', 'info');
+            
+            const tables = ['student_profiles', 'teacher_profiles', 'classes'];
+            
+            for (const table of tables) {
+                try {
+                    const response = await fetch(`${API_URL}/rest/v1/${table}?select=count`, {
+                        method: 'HEAD',
+                        headers: {
+                            'apikey': API_KEY,
+                            'Authorization': `Bearer ${API_KEY}`
+                        }
+                    });
+                    
+                    if (response.status === 200) {
+                        log(`✅ Table '${table}' exists and accessible`, 'success');
+                    } else if (response.status === 404) {
+                        log(`❌ Table '${table}' not found`, 'error');
+                    } else if (response.status === 401 || response.status === 403) {
+                        log(`⚠️ Table '${table}' exists but requires authentication`, 'warning');
+                    } else {
+                        log(`❌ Table '${table}' - Status: ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    log(`❌ Table '${table}' - Error: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        async function testAuth() {
+            log('👤 Testing authentication endpoint...', 'info');
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/v1/user`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': API_KEY,
+                        'Authorization': `Bearer ${API_KEY}`
+                    }
+                });
+                
+                if (response.status === 200) {
+                    const user = await response.json();
+                    log(`✅ Authenticated as: ${user.email || 'Unknown'}`, 'success');
+                } else if (response.status === 401) {
+                    log('ℹ️ No authenticated user (this is normal)', 'info');
+                } else {
+                    log(`⚠️ Auth endpoint status: ${response.status}`, 'warning');
+                }
+            } catch (error) {
+                log(`❌ Auth test error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testInsert() {
+            log('💾 Testing data insertion...', 'info');
+            
+            const testData = {
+                first_name: 'Test',
+                last_name: 'Student',
+                student_id: 'TEST-' + Date.now(),
+                grade_level: '10',
+                section: 'A',
+                enrollment_status: 'Active'
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/rest/v1/student_profiles`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': API_KEY,
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                if (response.status === 201) {
+                    log('✅ Data insertion successful!', 'success');
+                    log('✅ Your database is fully functional', 'success');
+                } else if (response.status === 401 || response.status === 403) {
+                    log('⚠️ Data insertion requires authentication', 'warning');
+                    log('ℹ️ Database exists but RLS policies require login', 'info');
+                } else if (response.status === 404) {
+                    log('❌ Table not found - SQL script not executed', 'error');
+                } else {
+                    const error = await response.text();
+                    log(`❌ Insert failed (${response.status}): ${error}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Insert test error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run basic test
+        window.addEventListener('load', () => {
+            log('🚀 Direct API Test Tool Loaded', 'info');
+            log(`🔗 Testing: ${API_URL}`, 'info');
+        });
+    </script>
+</body>
+</html>
