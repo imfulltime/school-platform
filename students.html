@@ -1380,29 +1380,15 @@
                         if (statusFilter.startsWith('teacher-')) {
                             // Teacher-specific filter
                             const teacherEmail = statusFilter.substring(8); // Remove 'teacher-' prefix
-                            const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles') || '{}';
-                            try {
-                                const profiles = JSON.parse(savedProfiles);
-                                const detailedProfile = profiles[student.id];
-                                if (!detailedProfile || detailedProfile.createdBy !== teacherEmail) {
-                                    return false;
-                                }
-                            } catch (e) {
-                                console.log('Error checking teacher filter:', e);
+                            const detailedProfile = this.detailedProfiles ? this.detailedProfiles[student.id] : null;
+                            if (!detailedProfile || (detailedProfile.created_by || detailedProfile.createdBy) !== teacherEmail) {
                                 return false;
                             }
                         } else {
                             // Regular status filter
-                            const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles') || '{}';
-                            try {
-                                const profiles = JSON.parse(savedProfiles);
-                                const detailedProfile = profiles[student.id];
-                                const studentStatus = detailedProfile?.enrollmentStatus || 'Active';
-                                if (studentStatus !== statusFilter) {
-                                    return false;
-                                }
-                            } catch (e) {
-                                console.log('Error checking status filter:', e);
+                            const detailedProfile = this.detailedProfiles ? this.detailedProfiles[student.id] : null;
+                            const studentStatus = detailedProfile?.enrollment_status || detailedProfile?.enrollmentStatus || 'Active';
+                            if (studentStatus !== statusFilter) {
                                 return false;
                             }
                         }
@@ -1469,16 +1455,8 @@
                 const student = this.students.find(s => s.name === name && s.id === id);
                 if (!student) return;
 
-                // Try to get detailed profile information
-                const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles') || '{}';
-                let detailedProfile = null;
-                
-                try {
-                    const profiles = JSON.parse(savedProfiles);
-                    detailedProfile = profiles[id];
-                } catch (e) {
-                    console.log('Error loading detailed profile:', e);
-                }
+                // Try to get detailed profile information from in-memory cloud snapshot
+                const detailedProfile = this.detailedProfiles ? this.detailedProfiles[id] : null;
 
                 const modal = document.getElementById('studentModal');
                 const modalBody = document.getElementById('modalBody');
