@@ -666,4 +666,10 @@ const dataService = new DataService();
 // Make globally available
 window.dataService = dataService;
 
-export default dataService;
+// Debug logging
+console.log('✅ DataService script loaded and instance created');
+
+// Export for modules (if supported)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = DataService;
+}

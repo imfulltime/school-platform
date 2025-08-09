@@ -81,6 +81,29 @@
                 }
                 log('✅ AuthService available', 'success');
                 
+                // Step 2.5: Check DataService
+                log('Checking DataService...', 'pending');
+                if (!window.dataService) {
+                    log('❌ DataService not available!', 'error');
+                    
+                    // Check if DataService class exists
+                    if (typeof DataService !== 'undefined') {
+                        log('⚠️ DataService class exists but instance missing - creating manually...', 'warning');
+                        try {
+                            window.dataService = new DataService();
+                            log('✅ DataService instance created manually', 'success');
+                        } catch (e) {
+                            log('❌ Failed to create DataService manually', 'error', e.message);
+                            return;
+                        }
+                    } else {
+                        log('❌ DataService class not available - script failed to load', 'error');
+                        return;
+                    }
+                } else {
+                    log('✅ DataService available', 'success');
+                }
+                
                 // Step 3: Initialize AuthService
                 log('Initializing AuthService...', 'pending');
                 await window.authService.initialize();

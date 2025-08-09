@@ -543,6 +543,26 @@
     <!-- Load Data Service -->
     <script src="./assets/js/services/DataService.js"></script>
     
+    <!-- DataService fallback check -->
+    <script>
+        // Ensure DataService is available
+        setTimeout(() => {
+            if (!window.dataService) {
+                console.error('❌ DataService failed to load! Attempting manual creation...');
+                
+                // Try to create DataService manually if class is available
+                if (typeof DataService !== 'undefined') {
+                    window.dataService = new DataService();
+                    console.log('✅ DataService created manually');
+                } else {
+                    console.error('❌ DataService class not available - script loading failed');
+                }
+            } else {
+                console.log('✅ DataService available:', typeof window.dataService);
+            }
+        }, 100);
+    </script>
+    
     <!-- PWA Support -->
     <script src="./assets/js/pwa.js"></script>
     

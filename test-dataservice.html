@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataService Loading Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>DataService Loading Test</h1>
+    <div id="results"></div>
+
+    <!-- Load Supabase first -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Load AuthService -->
+    <script src="./assets/js/services/AuthService.js"></script>
+    
+    <!-- Load DataService -->
+    <script src="./assets/js/services/DataService.js"></script>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+
+        // Test DataService loading
+        function testDataServiceLoading() {
+            addResult('Starting DataService loading test...', 'info');
+
+            // Test 1: Check if Supabase is available
+            if (typeof window.supabase !== 'undefined') {
+                addResult('✅ Supabase CDN loaded', 'success');
+            } else {
+                addResult('❌ Supabase CDN not loaded', 'error');
+                return;
+            }
+
+            // Test 2: Check if DataService class is defined
+            if (typeof DataService !== 'undefined') {
+                addResult('✅ DataService class is defined', 'success');
+            } else {
+                addResult('❌ DataService class is not defined', 'error');
+                return;
+            }
+
+            // Test 3: Check if window.dataService exists
+            if (window.dataService) {
+                addResult('✅ window.dataService exists', 'success');
+                addResult(`DataService type: ${typeof window.dataService}`, 'info');
+                
+                // Test if it has expected methods
+                const methods = ['initialize', 'getStudentProfiles', 'getClassRecords', 'getAttendance'];
+                methods.forEach(method => {
+                    if (typeof window.dataService[method] === 'function') {
+                        addResult(`✅ Method ${method} exists`, 'success');
+                    } else {
+                        addResult(`❌ Method ${method} missing`, 'error');
+                    }
+                });
+                
+            } else {
+                addResult('❌ window.dataService does not exist', 'error');
+                
+                // Try to create it manually
+                addResult('Attempting to create DataService manually...', 'info');
+                try {
+                    window.dataService = new DataService();
+                    addResult('✅ DataService created manually', 'success');
+                } catch (e) {
+                    addResult(`❌ Failed to create DataService: ${e.message}`, 'error');
+                }
+            }
+
+            // Test 4: Check AuthService
+            if (window.authService) {
+                addResult('✅ AuthService is available', 'success');
+            } else {
+                addResult('❌ AuthService is not available', 'error');
+            }
+        }
+
+        // Run test after page loads
+        window.addEventListener('load', () => {
+            setTimeout(testDataServiceLoading, 500);
+        });
+
+        // Also add error handler for script loading
+        window.addEventListener('error', (e) => {
+            addResult(`Script loading error: ${e.filename} - ${e.message}`, 'error');
+        });
+    </script>
+</body>
+</html>
