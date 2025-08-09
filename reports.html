@@ -519,6 +519,12 @@
         </div>
     </div>
 
+    <!-- Supabase and Services -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/services/AuthService.js"></script>
+    <script src="./assets/js/services/DataService.js"></script>
+    <script src="./assets/js/utils/storage-adapter.js"></script>
+
     <script>
         class ReportsSystem {
             constructor() {
@@ -529,8 +535,8 @@
                 this.init();
             }
 
-            init() {
-                this.loadData();
+            async init() {
+                await this.loadData();
                 this.setupEventListeners();
                 this.generateReports();
             }
@@ -546,59 +552,21 @@
                 });
             }
 
-            loadData() {
-                // Load class records
-                const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
-                if (savedClassRecords) {
-                    try {
-                        this.classRecords = JSON.parse(savedClassRecords);
-                    } catch (e) {
-                        console.log('Error loading class records:', e);
+            async loadData() {
+                try {
+                    if (window.authService) {
+                        await window.authService.initialize();
+                        const ok = await window.authService.requireAuth();
+                        if (!ok) return;
                     }
-                }
-
-                // Load attendance data
-                const savedAttendance = localStorage.getItem('schoolPlatform_attendance');
-                if (savedAttendance) {
-                    try {
-                        this.attendanceData = JSON.parse(savedAttendance);
-                    } catch (e) {
-                        console.log('Error loading attendance data:', e);
+                    if (window.dataService) {
+                        await window.dataService.initialize();
+                        this.classRecords = await window.dataService.getClassRecords();
+                        this.attendanceData = await window.dataService.getAttendance();
+                        this.studentProfiles = await window.dataService.getStudentProfiles();
                     }
-                }
-
-                // Load student profiles
-                const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles');
-                if (savedProfiles) {
-                    try {
-                        this.studentProfiles = JSON.parse(savedProfiles);
-                    } catch (e) {
-                        console.log('Error loading student profiles:', e);
-                        this.studentProfiles = {};
-                    }
-                } else {
-                    this.studentProfiles = {};
-                }
-
-                // Load old attendance format
-                const savedStudents = localStorage.getItem('schoolPlatform_students');
-                if (savedStudents) {
-                    try {
-                        const oldData = JSON.parse(savedStudents);
-                        Object.keys(oldData).forEach(classKey => {
-                            if (oldData[classKey] && Array.isArray(oldData[classKey])) {
-                                if (!this.attendanceData[classKey]) {
-                                    this.attendanceData[classKey] = { students: [] };
-                                }
-                                if (!this.attendanceData[classKey].students) {
-                                    this.attendanceData[classKey].students = [];
-                                }
-                                this.attendanceData[classKey].students = this.attendanceData[classKey].students.concat(oldData[classKey]);
-                            }
-                        });
-                    } catch (e) {
-                        console.log('Error loading old attendance data:', e);
-                    }
+                } catch (e) {
+                    console.warn('Error loading cloud data for reports:', e.message);
                 }
             }
 
