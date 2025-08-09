@@ -547,33 +547,85 @@
     <script src="./assets/js/pwa.js"></script>
     
     <script>
+        // Prevent multiple initialization attempts
+        let isInitializing = false;
+        let isInitialized = false;
+        
         // Authentication guard and initialization
         async function initializeDashboard() {
+            // Prevent multiple simultaneous initializations
+            if (isInitializing || isInitialized) {
+                console.log('🔄 Dashboard initialization already in progress or completed');
+                return;
+            }
+            
+            isInitializing = true;
+            console.log('🚀 Starting dashboard initialization...');
+            
             try {
-                // Initialize AuthService
-                await window.authService.initialize();
-                
-                // Check authentication - redirect if not logged in
-                const isAuthenticated = await window.authService.requireAuth();
-                if (!isAuthenticated) {
-                    return; // Already redirected by requireAuth
+                // Step 1: Check if required services are available
+                if (!window.authService) {
+                    throw new Error('AuthService not available - check script loading');
                 }
                 
-                // Initialize DataService
+                if (!window.dataService) {
+                    throw new Error('DataService not available - check script loading');
+                }
+                
+                console.log('✅ Services available');
+                
+                // Step 2: Initialize AuthService
+                console.log('🔐 Initializing AuthService...');
+                await window.authService.initialize();
+                console.log('✅ AuthService initialized');
+                
+                // Step 3: Check authentication - redirect if not logged in
+                console.log('🔍 Checking authentication...');
+                const isAuthenticated = await window.authService.requireAuth();
+                if (!isAuthenticated) {
+                    console.log('❌ Authentication failed - redirecting');
+                    return; // Already redirected by requireAuth
+                }
+                console.log('✅ User authenticated');
+                
+                // Step 4: Initialize DataService
+                console.log('📊 Initializing DataService...');
                 await window.dataService.initialize();
+                console.log('✅ DataService initialized');
                 
-                // Update UI with user info
+                // Step 5: Update UI with user info
+                console.log('🎨 Updating user interface...');
                 updateUserInterface();
+                console.log('✅ UI updated');
                 
-                // Load real data
-                loadRealData();
+                // Step 6: Load real data
+                console.log('📥 Loading dashboard data...');
+                await loadRealData();
+                console.log('✅ Data loaded');
                 
-                console.log('✅ Dashboard initialized successfully');
+                console.log('🎉 Dashboard initialized successfully');
+                isInitialized = true;
                 
             } catch (error) {
                 console.error('❌ Dashboard initialization failed:', error);
-                alert('⚠️ Failed to initialize dashboard. Please try logging in again.');
-                window.location.href = 'auth.html';
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    authServiceAvailable: !!window.authService,
+                    dataServiceAvailable: !!window.dataService,
+                    supabaseAvailable: !!window.supabase
+                });
+                
+                // Show more specific error message
+                const errorMsg = `Failed to initialize dashboard: ${error.message}\n\nTechnical details:\n- AuthService: ${!!window.authService}\n- DataService: ${!!window.dataService}\n- Supabase: ${!!window.supabase}\n\nClick OK to go to the debug page or Cancel to retry login.`;
+                
+                if (confirm(errorMsg)) {
+                    window.location.href = 'debug-auth.html';
+                } else {
+                    window.location.href = 'auth.html?error=init_failed';
+                }
+            } finally {
+                isInitializing = false;
             }
         }
 
@@ -601,11 +653,27 @@
                 let totalClasses = 0;
 
                 // Load data from Supabase via DataService
+                console.log('📊 Fetching data from Supabase...');
                 const [studentProfiles, classRecords, attendance] = await Promise.all([
-                    window.dataService.getStudentProfiles().catch(() => ({})),
-                    window.dataService.getClassRecords().catch(() => ({})),
-                    window.dataService.getAttendance().catch(() => ({}))
+                    window.dataService.getStudentProfiles().catch(err => {
+                        console.warn('Could not load student profiles:', err.message);
+                        return {};
+                    }),
+                    window.dataService.getClassRecords().catch(err => {
+                        console.warn('Could not load class records:', err.message);
+                        return {};
+                    }),
+                    window.dataService.getAttendance().catch(err => {
+                        console.warn('Could not load attendance:', err.message);
+                        return {};
+                    })
                 ]);
+                
+                console.log('📊 Data loaded:', {
+                    students: Object.keys(studentProfiles).length,
+                    classes: Object.keys(classRecords).length,
+                    attendance: Object.keys(attendance).length
+                });
 
                 // Count students
                 totalStudents = Object.keys(studentProfiles).length;

@@ -215,9 +215,22 @@ class AuthService {
             await this.initialize();
         }
 
+        // Wait a moment for auth state to settle
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Double-check session from Supabase directly
+        if (this.supabase) {
+            const { data: { session } } = await this.supabase.auth.getSession();
+            if (session && session.user) {
+                this.currentUser = session.user;
+                console.log('✅ Session verified from Supabase');
+                return true;
+            }
+        }
+
         if (!this.isAuthenticated()) {
             console.log('🚫 Authentication required - redirecting to login');
-            window.location.href = 'auth.html';
+            window.location.href = 'auth.html?reason=auth_required';
             return false;
         }
 

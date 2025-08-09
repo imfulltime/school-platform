@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Debug - School Platform</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .debug-section { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #4CAF50; }
+        .error { border-left-color: #f44336; }
+        .warning { border-left-color: #ff9800; }
+        .info { border-left-color: #2196F3; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #2196F3; color: white; }
+        .btn-success { background: #4CAF50; color: white; }
+        .btn-danger { background: #f44336; color: white; }
+        .step { margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 4px; }
+        .step.success { background: #e8f5e9; border-left: 3px solid #4CAF50; }
+        .step.error { background: #ffebee; border-left: 3px solid #f44336; }
+        .step.pending { background: #fff3e0; border-left: 3px solid #ff9800; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Authentication Debug Tool</h1>
+    <p>This tool will help diagnose the authentication loop issue step by step.</p>
+
+    <div class="debug-section">
+        <h3>Quick Actions</h3>
+        <button class="btn-primary" onclick="testInitialization()">🔄 Test Full Initialization</button>
+        <button class="btn-success" onclick="clearAllData()">🗑️ Clear All Data</button>
+        <button class="btn-danger" onclick="forceLogout()">🚪 Force Logout</button>
+        <button class="btn-primary" onclick="window.location.href='dashboard.html'">📊 Go to Dashboard</button>
+    </div>
+
+    <div id="debugOutput"></div>
+
+    <!-- Load Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Load Services -->
+    <script src="./assets/js/services/AuthService.js"></script>
+    <script src="./assets/js/services/DataService.js"></script>
+
+    <script>
+        let debugOutput = document.getElementById('debugOutput');
+        let stepCounter = 0;
+
+        function log(message, type = 'info', data = null) {
+            console.log(message, data);
+            
+            const step = document.createElement('div');
+            step.className = `step ${type}`;
+            step.innerHTML = `
+                <strong>Step ${++stepCounter}:</strong> ${message}
+                ${data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : ''}
+            `;
+            debugOutput.appendChild(step);
+        }
+
+        async function testInitialization() {
+            debugOutput.innerHTML = '';
+            stepCounter = 0;
+            
+            try {
+                log('🚀 Starting initialization test...', 'info');
+                
+                // Step 1: Check if Supabase CDN loaded
+                log('Checking Supabase CDN...', 'pending');
+                if (typeof window.supabase === 'undefined') {
+                    log('❌ Supabase CDN not loaded!', 'error');
+                    return;
+                }
+                log('✅ Supabase CDN loaded successfully', 'success');
+                
+                // Step 2: Check AuthService
+                log('Checking AuthService...', 'pending');
+                if (!window.authService) {
+                    log('❌ AuthService not available!', 'error');
+                    return;
+                }
+                log('✅ AuthService available', 'success');
+                
+                // Step 3: Initialize AuthService
+                log('Initializing AuthService...', 'pending');
+                await window.authService.initialize();
+                log('✅ AuthService initialized', 'success');
+                
+                // Step 4: Check authentication status
+                log('Checking authentication...', 'pending');
+                const isAuth = window.authService.isAuthenticated();
+                const currentUser = window.authService.getCurrentUser();
+                log(`Authentication status: ${isAuth}`, isAuth ? 'success' : 'warning', currentUser);
+                
+                // Step 5: Test Supabase session
+                log('Getting Supabase session...', 'pending');
+                const supabase = window.authService.getSupabaseClient();
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) {
+                    log('❌ Supabase session error', 'error', error);
+                } else {
+                    log('✅ Supabase session retrieved', 'success', { 
+                        hasSession: !!session, 
+                        userId: session?.user?.id,
+                        email: session?.user?.email 
+                    });
+                }
+                
+                // Step 6: Test DataService if authenticated
+                if (isAuth) {
+                    log('Testing DataService initialization...', 'pending');
+                    try {
+                        await window.dataService.initialize();
+                        log('✅ DataService initialized successfully', 'success');
+                        
+                        // Test a simple data operation
+                        log('Testing data operation...', 'pending');
+                        const profiles = await window.dataService.getStudentProfiles();
+                        log('✅ Data operation successful', 'success', { 
+                            profileCount: Object.keys(profiles).length 
+                        });
+                        
+                    } catch (dataError) {
+                        log('❌ DataService error', 'error', dataError.message);
+                    }
+                } else {
+                    log('⚠️ Skipping DataService test - not authenticated', 'warning');
+                }
+                
+                log('🎉 Initialization test completed!', 'success');
+                
+            } catch (error) {
+                log('❌ Initialization test failed', 'error', error.message);
+            }
+        }
+
+        async function clearAllData() {
+            log('🗑️ Clearing all data...', 'info');
+            
+            // Clear localStorage
+            const localKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                localKeys.push(localStorage.key(i));
+            }
+            localKeys.forEach(key => localStorage.removeItem(key));
+            
+            // Clear sessionStorage
+            sessionStorage.clear();
+            
+            log(`✅ Cleared ${localKeys.length} localStorage items and all sessionStorage`, 'success');
+        }
+
+        async function forceLogout() {
+            log('🚪 Force logout...', 'info');
+            
+            try {
+                if (window.authService && window.authService.supabase) {
+                    await window.authService.supabase.auth.signOut();
+                }
+            } catch (e) {
+                log('⚠️ Error during Supabase logout', 'warning', e.message);
+            }
+            
+            // Clear all data
+            clearAllData();
+            
+            // Redirect
+            window.location.href = 'auth.html?logout=forced';
+        }
+
+        // Auto-run test on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(testInitialization, 1000);
+        });
+    </script>
+</body>
+</html>
