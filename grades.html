@@ -1048,25 +1048,32 @@
                 });
             }
 
-            // Load saved data from localStorage
-            loadSavedData() {
-                const savedClasses = localStorage.getItem('schoolPlatform_classRecords');
-                if (savedClasses) {
-                    try {
-                        this.classes = JSON.parse(savedClasses);
-                    } catch (e) {
-                        console.log('Error loading saved class data:', e);
-                        this.classes = {};
+            // Load classes from Supabase
+            async loadSavedData() {
+                try {
+                    if (window.authService) {
+                        await window.authService.initialize();
+                        const ok = await window.authService.requireAuth();
+                        if (!ok) return;
                     }
+                    if (window.dataService) {
+                        await window.dataService.initialize();
+                        this.classes = await window.dataService.getClassRecords();
+                    }
+                } catch (e) {
+                    console.warn('Error loading classes from cloud:', e.message);
+                    this.classes = {};
                 }
             }
 
-            // Save data to localStorage
-            saveDataToStorage() {
+            // Save classes to Supabase
+            async saveDataToStorage() {
                 try {
-                    localStorage.setItem('schoolPlatform_classRecords', JSON.stringify(this.classes));
+                    if (window.dataService) {
+                        await window.dataService.setClassRecords(this.classes);
+                    }
                 } catch (e) {
-                    console.log('Error saving class data to localStorage:', e);
+                    console.warn('Error saving class data to cloud:', e.message);
                 }
             }
 

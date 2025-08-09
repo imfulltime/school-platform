@@ -544,26 +544,39 @@
                 this.init();
             }
 
-            init() {
-                this.loadProfile();
-                this.updateStats();
+            async init() {
+                await this.loadProfile();
+                await this.updateStats();
             }
 
-            loadProfile() {
-                const savedProfile = localStorage.getItem('schoolPlatform_teacherProfile');
-                
-                if (savedProfile) {
-                    try {
-                        const profile = JSON.parse(savedProfile);
-                        this.displayProfile(profile);
+            async loadProfile() {
+                try {
+                    if (window.authService) {
+                        await window.authService.initialize();
+                        const ok = await window.authService.requireAuth();
+                        if (!ok) return;
+                    }
+                    let profile = {};
+                    if (window.dataService) {
+                        await window.dataService.initialize();
+                        profile = await window.dataService.getTeacherProfile();
+                    }
+                    if (profile && Object.keys(profile).length > 0) {
+                        this.displayProfile({
+                            firstName: profile.first_name || profile.firstName || '',
+                            lastName: profile.last_name || profile.lastName || '',
+                            title: profile.title || '',
+                            yearsOfExperience: profile.years_of_experience || profile.yearsOfExperience || '',
+                            profilePhoto: profile.profile_photo || profile.profilePhoto || ''
+                        });
                         document.getElementById('welcomeCard').style.display = 'none';
                         document.getElementById('profileCard').style.display = 'block';
                         document.getElementById('teacherStats').style.display = 'grid';
-                    } catch (e) {
-                        console.log('Error loading teacher profile:', e);
+                    } else {
                         this.showWelcome();
                     }
-                } else {
+                } catch (e) {
+                    console.log('Error loading teacher profile:', e.message);
                     this.showWelcome();
                 }
             }
@@ -605,67 +618,31 @@
                 });
             }
 
-            updateStats() {
-                // Calculate statistics from existing data
-                const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
+            async updateStats() {
                 let totalClasses = 0;
                 let totalStudents = 0;
-                let totalGrades = 0;
-                let gradeSum = 0;
-
-                if (savedClassRecords) {
-                    try {
-                        const classes = JSON.parse(savedClassRecords);
+                try {
+                    if (window.dataService) {
+                        const classes = await window.dataService.getClassRecords();
                         totalClasses = Object.keys(classes).length;
-                        
-                        // Use Set to track unique students to avoid counting duplicates
                         const uniqueStudentIds = new Set();
-                        
                         Object.values(classes).forEach(classData => {
-                            classData.students.forEach(student => {
-                                // Add student ID to set (automatically handles duplicates)
-                                uniqueStudentIds.add(student.id);
-                                
-                                const studentGrades = Object.values(student.grades || {});
-                                totalGrades += studentGrades.length;
-                                
-                                studentGrades.forEach(grade => {
-                                    // Handle both old format (number) and new format (object)
-                                    let gradeValue = 0;
-                                    if (typeof grade === 'object' && grade !== null) {
-                                        gradeValue = grade.percentage || 0;
-                                    } else if (typeof grade === 'number') {
-                                        gradeValue = grade;
-                                    }
-                                    gradeSum += gradeValue;
-                                });
-                            });
+                            (classData.students || []).forEach(student => uniqueStudentIds.add(student.id));
                         });
-                        
-                        // Set total students to the count of unique student IDs
                         totalStudents = uniqueStudentIds.size;
-                    } catch (e) {
-                        console.log('Error loading class data:', e);
                     }
+                } catch (e) {
+                    console.log('Error loading class data:', e.message);
                 }
-
-                // Update statistics display
                 document.getElementById('totalClasses').textContent = totalClasses;
                 document.getElementById('totalStudents').textContent = totalStudents;
-                
-                const averageGrade = totalGrades > 0 ? Math.round(gradeSum / totalGrades) : 0;
-                document.getElementById('averageGrade').textContent = averageGrade > 0 ? averageGrade + '%' : 'N/A';
-
-                // Get years of experience from profile
-                const savedProfile = localStorage.getItem('schoolPlatform_teacherProfile');
-                if (savedProfile) {
-                    try {
-                        const profile = JSON.parse(savedProfile);
-                        document.getElementById('yearsExperience').textContent = profile.yearsOfExperience || 0;
-                    } catch (e) {
-                        document.getElementById('yearsExperience').textContent = 0;
+                document.getElementById('averageGrade').textContent = 'N/A';
+                try {
+                    if (window.dataService) {
+                        const profile = await window.dataService.getTeacherProfile();
+                        document.getElementById('yearsExperience').textContent = profile?.years_of_experience || profile?.yearsOfExperience || 0;
                     }
-                }
+                } catch (e) { document.getElementById('yearsExperience').textContent = 0; }
             }
 
             toggleEdit() {
@@ -701,7 +678,7 @@
                 return formData;
             }
 
-            saveProfile() {
+            async saveProfile() {
                 const formData = this.getCurrentFormData();
                 
                 // Validation
@@ -713,8 +690,14 @@
                 // Add system fields
                 formData.lastUpdated = new Date().toISOString();
                 
-                // Save to localStorage
-                localStorage.setItem('schoolPlatform_teacherProfile', JSON.stringify(formData));
+                // Save to Supabase (map to snake_case)
+                const payload = {
+                    first_name: formData.firstName,
+                    last_name: formData.lastName,
+                    title: formData.title || null,
+                    years_of_experience: formData.yearsOfExperience || null
+                };
+                try { if (window.dataService) { await window.dataService.setTeacherProfile(payload); } } catch {}
                 
                 // Update display
                 this.displayProfile(formData);
@@ -739,7 +722,7 @@
                 this.toggleEdit();
             }
 
-            createProfile() {
+            async createProfile() {
                 // Generate default employee ID
                 const now = new Date();
                 const defaultEmployeeId = 'TCH' + now.getFullYear().toString().substr(-2) + 
@@ -772,8 +755,14 @@
                     dateCreated: new Date().toISOString()
                 };
 
-                // Save initial profile
-                localStorage.setItem('schoolPlatform_teacherProfile', JSON.stringify(newProfile));
+                // Save initial profile to Supabase
+                const payload = {
+                    first_name: newProfile.firstName,
+                    last_name: newProfile.lastName,
+                    title: newProfile.title || null,
+                    years_of_experience: newProfile.yearsOfExperience || null
+                };
+                try { if (window.dataService) { await window.dataService.setTeacherProfile(payload); } } catch {}
                 
                 // Display profile and enter edit mode
                 this.displayProfile(newProfile);
@@ -807,7 +796,7 @@
             document.getElementById('photoUploadInput').click();
         }
 
-        function handlePhotoUpload(event) {
+        async function handlePhotoUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -835,47 +824,46 @@
                 // Show photo actions
                 document.getElementById('photoActions').style.display = 'flex';
                 
-                // Save to localStorage (extend teacher profile with photo)
-                const savedProfile = localStorage.getItem('schoolPlatform_teacherProfile');
-                if (savedProfile) {
-                    try {
-                        const profile = JSON.parse(savedProfile);
-                        profile.profilePhoto = imageData;
-                        localStorage.setItem('schoolPlatform_teacherProfile', JSON.stringify(profile));
+                try {
+                    if (window.dataService) {
+                        const current = await window.dataService.getTeacherProfile();
+                        const payload = {
+                            first_name: current?.first_name || null,
+                            last_name: current?.last_name || null,
+                            title: current?.title || null,
+                            years_of_experience: current?.years_of_experience || null,
+                            profile_photo: imageData
+                        };
+                        await window.dataService.setTeacherProfile(payload);
                         console.log('Profile photo saved successfully');
-                    } catch (e) {
-                        console.error('Error saving profile photo:', e);
                     }
-                }
+                } catch (e) { console.error('Error saving profile photo:', e); }
             };
             
             reader.readAsDataURL(file);
         }
 
-        function removePhoto() {
+        async function removePhoto() {
             if (!confirm('Are you sure you want to remove your profile photo?')) {
                 return;
             }
 
             // Reset avatar to initials
-            const savedProfile = localStorage.getItem('schoolPlatform_teacherProfile');
             let initials = 'T';
-            
-            if (savedProfile) {
-                try {
-                    const profile = JSON.parse(savedProfile);
-                    // Generate initials from first and last name
-                    const firstInitial = profile.firstName ? profile.firstName.charAt(0).toUpperCase() : '';
-                    const lastInitial = profile.lastName ? profile.lastName.charAt(0).toUpperCase() : '';
-                    initials = firstInitial + lastInitial || 'T';
-                    
-                    // Remove photo from profile
-                    delete profile.profilePhoto;
-                    localStorage.setItem('schoolPlatform_teacherProfile', JSON.stringify(profile));
-                } catch (e) {
-                    console.error('Error removing profile photo:', e);
+            try {
+                if (window.dataService) {
+                    const current = await window.dataService.getTeacherProfile();
+                    const firstInitial = current?.first_name?.charAt(0).toUpperCase() || current?.last_name?.charAt(0).toUpperCase() || 'T';
+                    initials = firstInitial || 'T';
+                    const payload = {
+                        first_name: current?.first_name || null,
+                        last_name: current?.last_name || null,
+                        title: current?.title || null,
+                        years_of_experience: current?.years_of_experience || null
+                    };
+                    await window.dataService.setTeacherProfile(payload);
                 }
-            }
+            } catch (e) { console.error('Error removing profile photo:', e); }
 
             // Update avatar display
             const avatar = document.getElementById('profileAvatar');
@@ -893,13 +881,14 @@
         }
 
         // Navigate to students page showing only this teacher's students
-        function viewMyStudents() {
+        async function viewMyStudents() {
             // Store current teacher info for filtering
-            const teacherProfile = JSON.parse(localStorage.getItem('schoolPlatform_teacherProfile') || '{}');
+            let teacherProfile = {};
+            try { if (window.dataService) { teacherProfile = await window.dataService.getTeacherProfile(); } } catch {}
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
             
-            const teacherName = teacherProfile.firstName && teacherProfile.lastName ? 
-                `${teacherProfile.firstName} ${teacherProfile.lastName}` : 
+            const teacherName = (teacherProfile.first_name || teacherProfile.firstName) && (teacherProfile.last_name || teacherProfile.lastName) ? 
+                `${teacherProfile.first_name || teacherProfile.firstName} ${teacherProfile.last_name || teacherProfile.lastName}` : 
                 (currentUser.name || currentUser.email || 'Unknown Teacher');
             
             // Set filter flag for students.html
