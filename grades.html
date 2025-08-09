@@ -1640,7 +1640,7 @@
                 this.showSuccessMessage(`Assignment "${assignmentName}" added`);
             }
 
-            removeAssignment(assignmentName) {
+            async removeAssignment(assignmentName) {
                 if (!confirm(`Remove assignment "${assignmentName}"? This will delete all grades for this assignment.`)) {
                     return;
                 }
@@ -1648,10 +1648,24 @@
                 const classData = this.classes[this.currentClass];
                 classData.assignments = classData.assignments.filter(a => a !== assignmentName);
                 
-                // Remove grades for this assignment from all students
+                // Remove grades for this assignment from all students (local view)
                 classData.students.forEach(student => {
                     delete student.grades[assignmentName];
                 });
+
+                // Remove grades for this assignment in cloud
+                try {
+                    if (window.authService) {
+                        const supabase = window.authService.getSupabaseClient();
+                        const userId = window.authService.getCurrentUserId();
+                        await supabase
+                          .from('grades')
+                          .delete()
+                          .eq('created_by', userId)
+                          .eq('class_name', this.currentClass)
+                          .eq('assessment_type', assignmentName);
+                    }
+                } catch (e) { console.warn('Error deleting grades in cloud:', e.message); }
 
                 this.saveDataToStorage();
                 this.renderClassRecord();
@@ -1659,17 +1673,20 @@
                 this.showSuccessMessage(`Assignment "${assignmentName}" removed`);
             }
 
-            updateGrade(studentId, assignment, grade) {
+            async updateGrade(studentId, assignment, grade) {
                 const classData = this.classes[this.currentClass];
                 const student = classData.students.find(s => s.id === studentId);
                 
                 if (student) {
                     if (grade === '' || grade === null) {
                         delete student.grades[assignment];
+                        // Also clear in cloud
+                        await this.saveGradeToCloud(studentId, assignment, null, null, null);
                     } else {
                         const numGrade = parseFloat(grade);
                         if (numGrade >= 0 && numGrade <= 100) {
                             student.grades[assignment] = numGrade;
+                            await this.saveGradeToCloud(studentId, assignment, null, null, numGrade);
                         }
                     }
                     this.saveDataToStorage();
@@ -1679,7 +1696,7 @@
             }
 
             // New points-based grade update function
-            updatePointsGrade(studentId, assignment, points, totalPoints) {
+            async updatePointsGrade(studentId, assignment, points, totalPoints) {
                 const classData = this.classes[this.currentClass];
                 const student = classData.students.find(s => s.id === studentId);
                 
@@ -1689,6 +1706,7 @@
                     if (points === '' || points === null) {
                         // Clear the grade
                         delete student.grades[assignment];
+                        await this.saveGradeToCloud(studentId, assignment, null, null, null);
                     } else if (numericPoints >= 0 && numericPoints <= totalPoints) {
                         // Calculate percentage automatically
                         const percentage = totalPoints > 0 ? (numericPoints / totalPoints) * 100 : 0;
@@ -1699,12 +1717,29 @@
                             totalPoints: totalPoints,
                             percentage: percentage
                         };
+                        await this.saveGradeToCloud(studentId, assignment, numericPoints, totalPoints, percentage);
                     }
                     
                     this.saveDataToStorage();
                     this.renderClassRecord(); // Re-render to show updated percentage
                     this.updateStatistics();
                 }
+            }
+
+            // Persist a single grade to Supabase via DataService
+            async saveGradeToCloud(studentId, assignment, points, totalPoints, percentage) {
+                try {
+                    if (!window.dataService) return;
+                    const payload = {
+                        student_id: studentId,
+                        class_name: this.currentClass,
+                        assessment_type: assignment,
+                        score: percentage != null ? percentage : null,
+                        percentage: percentage != null ? percentage : null,
+                        metadata: points != null && totalPoints != null ? { points, totalPoints } : {}
+                    };
+                    await window.dataService.saveGrade(payload);
+                } catch (e) { console.warn('Error saving grade to cloud:', e.message); }
             }
 
             removeStudent(studentId) {

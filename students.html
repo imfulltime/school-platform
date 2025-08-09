@@ -1337,21 +1337,15 @@
                 if (primaryClassSelect) {
                     primaryClassSelect.innerHTML = '<option value="">Select Class</option>';
                     
-                    // Get all available classes from the class records
-                    const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
-                    if (savedClassRecords) {
-                        try {
-                            const classes = JSON.parse(savedClassRecords);
-                            Object.keys(classes).sort().forEach(className => {
-                                const option = document.createElement('option');
-                                option.value = className;
-                                option.textContent = className;
-                                primaryClassSelect.appendChild(option);
-                            });
-                        } catch (e) {
-                            console.log('Error loading classes for form:', e);
-                        }
-                    }
+                    // Populate from cloud-loaded classes snapshot
+                    try {
+                        Object.keys(this.classes || {}).sort().forEach(className => {
+                            const option = document.createElement('option');
+                            option.value = className;
+                            option.textContent = className;
+                            primaryClassSelect.appendChild(option);
+                        });
+                    } catch (e) { console.log('Error loading classes for form:', e); }
                 }
             }
 
