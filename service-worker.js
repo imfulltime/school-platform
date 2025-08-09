@@ -17,8 +17,7 @@ const STATIC_FILES = [
   '/teacher-profile.html',
   '/auth.html',
   '/assets/css/styles.css',
-  '/assets/js/sync-loader.js',
-  '/assets/js/services/SyncService.js',
+  // removed legacy sync files
   '/manifest.json'
 ];
 

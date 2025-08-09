@@ -298,7 +298,7 @@
                 grid-template-columns: 1fr;
             }
         }
-    </style>
+</style>
 </head>
 <body>
     <header class="header">
@@ -361,6 +361,12 @@
         </div>
     </div>
 
+    <!-- Supabase and Services -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/services/AuthService.js"></script>
+    <script src="./assets/js/services/DataService.js"></script>
+    <script src="./assets/js/utils/storage-adapter.js"></script>
+
     <script>
         // Real student data loaded from class records
         let students = {};
@@ -369,9 +375,18 @@
         let classRecords = {};
 
         // Initialize the page
-        function init() {
+        async function init() {
             setCurrentDate();
-            loadRealData();
+            try {
+                await window.authService.initialize();
+                const ok = await window.authService.requireAuth();
+                if (!ok) return;
+                await window.dataService.initialize();
+            } catch (e) {
+                console.error('Auth/Data init failed:', e);
+                return;
+            }
+            await loadRealData();
             populateClassSelector();
             if (Object.keys(students).length > 0) {
                 currentClass = Object.keys(students)[0];
@@ -383,61 +398,38 @@
         }
 
         // Load real data from class records and attendance
-        function loadRealData() {
-            // Load class records
-            const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
-            if (savedClassRecords) {
-                try {
-                    classRecords = JSON.parse(savedClassRecords);
-                    // Convert class records to attendance format
-                    students = {};
-                    Object.keys(classRecords).forEach(className => {
-                        const classData = classRecords[className];
-                        students[className] = classData.students.map(student => ({
-                            id: student.id,
-                            name: student.name,
-                            studentId: student.id,
-                            status: null
-                        }));
-                    });
-                } catch (e) {
-                    console.log('Error loading class records:', e);
-                }
-            }
+        async function loadRealData() {
+            try {
+                classRecords = await window.dataService.getClassRecords();
+                // Convert class records to attendance format
+                students = {};
+                Object.keys(classRecords).forEach(className => {
+                    const classData = classRecords[className];
+                    const list = (classData.students || []).map(student => ({
+                        id: student.id,
+                        name: student.name,
+                        studentId: student.id,
+                        status: null
+                    }));
+                    students[className] = list;
+                });
 
-            // Load saved attendance data
-            const savedAttendance = localStorage.getItem('schoolPlatform_attendance');
-            if (savedAttendance) {
-                try {
-                    attendanceData = JSON.parse(savedAttendance);
-                    // Merge saved attendance status with current students
-                    Object.keys(attendanceData).forEach(className => {
-                        if (students[className] && attendanceData[className].students) {
-                            attendanceData[className].students.forEach(savedStudent => {
-                                const currentStudent = students[className].find(s => s.studentId === savedStudent.studentId);
-                                if (currentStudent) {
-                                    currentStudent.status = savedStudent.status;
-                                }
-                            });
-                        }
-                    });
-                } catch (e) {
-                    console.log('Error loading saved attendance data:', e);
-                }
-            }
+                // Load saved attendance data from Supabase
+                attendanceData = await window.dataService.getAttendance();
 
-            // Load legacy attendance data for backward compatibility
-            const savedStudents = localStorage.getItem('schoolPlatform_students');
-            if (savedStudents) {
-                try {
-                    const legacyStudents = JSON.parse(savedStudents);
-                    // Merge legacy data if we don't have class records yet
-                    if (Object.keys(students).length === 0) {
-                        students = legacyStudents;
+                // Merge saved attendance status with current students
+                Object.keys(attendanceData).forEach(className => {
+                    if (students[className] && attendanceData[className]?.students) {
+                        attendanceData[className].students.forEach(savedStudent => {
+                            const currentStudent = students[className].find(s => s.studentId === savedStudent.studentId);
+                            if (currentStudent) {
+                                currentStudent.status = savedStudent.status;
+                            }
+                        });
                     }
-                } catch (e) {
-                    console.log('Error loading legacy student data:', e);
-                }
+                });
+            } catch (e) {
+                console.warn('Error loading data:', e.message);
             }
         }
 
@@ -460,12 +452,11 @@
         }
 
         // Save data to localStorage
-        function saveDataToStorage() {
+        async function saveDataToStorage() {
             try {
-                localStorage.setItem('schoolPlatform_students', JSON.stringify(students));
-                localStorage.setItem('schoolPlatform_attendance', JSON.stringify(attendanceData));
+                await window.dataService.setAttendance(attendanceData);
             } catch (e) {
-                console.log('Error saving data to localStorage:', e);
+                console.warn('Error saving attendance:', e.message);
             }
         }
 

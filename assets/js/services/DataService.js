@@ -517,6 +517,45 @@ class DataService {
   }
 
   /**
+   * Bulk save student profiles from an object map
+   * @param {Object} profilesMap - { [id]: profile }
+   */
+  async setStudentProfiles(profilesMap) {
+    await this.ensureInitialized();
+    const userId = this.getCurrentUserId();
+
+    const profilesArray = Object.values(profilesMap || {}).map(p => ({
+      ...p,
+      created_by: userId,
+      updated_at: new Date().toISOString(),
+      created_at: p.created_at || new Date().toISOString()
+    }));
+
+    if (profilesArray.length === 0) {
+      this.cache.set('studentProfiles', {});
+      this.notifyListeners('studentProfiles', {});
+      return {};
+    }
+
+    const { data, error } = await this.supabase
+      .from('student_profiles')
+      .upsert(profilesArray)
+      .select();
+
+    if (error) {
+      throw new Error(`Failed to save student profiles: ${error.message}`);
+    }
+
+    const saved = {};
+    data.forEach(profile => {
+      saved[profile.id || profile.student_id] = profile;
+    });
+    this.cache.set('studentProfiles', saved);
+    this.notifyListeners('studentProfiles', saved);
+    return saved;
+  }
+
+  /**
    * Clear all user data (requires confirmation)
    */
   async clear() {
