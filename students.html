@@ -1171,25 +1171,29 @@
                 }
             }
 
-            loadAllData() {
+            async loadAllData() {
                 // Load class records
-                const savedClassRecords = localStorage.getItem('schoolPlatform_classRecords');
-                if (savedClassRecords) {
-                    try {
-                        this.classes = JSON.parse(savedClassRecords);
-                    } catch (e) {
-                        console.log('Error loading class records:', e);
+                try {
+                    if (window.authService) {
+                        await window.authService.initialize();
+                        const ok = await window.authService.requireAuth();
+                        if (!ok) return;
                     }
+                    if (window.dataService) {
+                        await window.dataService.initialize();
+                        this.classes = await window.dataService.getClassRecords();
+                    }
+                } catch (e) {
+                    console.warn('Error loading class records from cloud:', e.message);
                 }
 
                 // Load attendance data
-                const savedAttendance = localStorage.getItem('schoolPlatform_attendance');
-                if (savedAttendance) {
-                    try {
-                        this.attendanceData = JSON.parse(savedAttendance);
-                    } catch (e) {
-                        console.log('Error loading attendance data:', e);
+                try {
+                    if (window.dataService) {
+                        this.attendanceData = await window.dataService.getAttendance();
                     }
+                } catch (e) {
+                    console.warn('Error loading attendance from cloud:', e.message);
                 }
 
                 // Load old attendance data (students)
@@ -1268,38 +1272,41 @@
                     }
                 });
 
-                // Load detailed student profiles and merge them
-                const savedProfiles = localStorage.getItem('schoolPlatform_studentProfiles');
-                if (savedProfiles) {
-                    try {
-                        const detailedProfiles = JSON.parse(savedProfiles);
-                        Object.values(detailedProfiles).forEach(detailedProfile => {
-                            const key = `${detailedProfile.name}_${detailedProfile.id}`;
-                            
-                            if (studentMap.has(key)) {
-                                // Merge detailed profile data with existing profile
-                                const profile = studentMap.get(key);
-                                Object.assign(profile, detailedProfile);
-                                // Preserve the compiled classes array
-                                if (!profile.classes || profile.classes.length === 0) {
-                                    profile.classes = detailedProfile.primaryClass ? [detailedProfile.primaryClass] : [];
-                                }
-                            } else {
-                                // Add new detailed profile that isn't in any class yet
-                                const newProfile = {
-                                    ...detailedProfile,
-                                    classes: detailedProfile.primaryClass ? [detailedProfile.primaryClass] : [],
-                                    grades: {},
-                                    attendance: { present: 0, absent: 0, tardy: 0 },
-                                    totalGrades: 0,
-                                    gradeSum: 0
-                                };
-                                studentMap.set(key, newProfile);
-                            }
-                        });
-                    } catch (e) {
-                        console.log('Error loading detailed student profiles:', e);
+                // Load detailed student profiles from cloud and merge them
+                try {
+                    let cloudProfiles = {};
+                    if (window.dataService) {
+                        cloudProfiles = await window.dataService.getStudentProfiles();
                     }
+                    Object.values(cloudProfiles).forEach(dp => {
+                        const displayName = dp.name || `${dp.first_name || dp.firstName || ''} ${dp.last_name || dp.lastName || ''}`.trim();
+                        const key = `${displayName}_${dp.id}`;
+                        const merged = {
+                            name: displayName,
+                            id: dp.id,
+                            enrollmentStatus: dp.enrollment_status || dp.enrollmentStatus || 'Active',
+                            gender: dp.gender,
+                            primaryClass: dp.primary_class || dp.primaryClass || ''
+                        };
+                        if (studentMap.has(key)) {
+                            const profile = studentMap.get(key);
+                            Object.assign(profile, merged);
+                            if (!profile.classes || profile.classes.length === 0) {
+                                profile.classes = merged.primaryClass ? [merged.primaryClass] : [];
+                            }
+                        } else {
+                            studentMap.set(key, {
+                                ...merged,
+                                classes: merged.primaryClass ? [merged.primaryClass] : [],
+                                grades: {},
+                                attendance: { present: 0, absent: 0, tardy: 0 },
+                                totalGrades: 0,
+                                gradeSum: 0
+                            });
+                        }
+                    });
+                } catch (e) {
+                    console.warn('Error loading detailed student profiles from cloud:', e.message);
                 }
 
                 this.students = Array.from(studentMap.values());

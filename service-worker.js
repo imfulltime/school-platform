@@ -2,8 +2,8 @@
 // Version 1.0.0
 
 const CACHE_NAME = 'school-platform-v1';
-const STATIC_CACHE = 'school-platform-static-v1';
-const DYNAMIC_CACHE = 'school-platform-dynamic-v1';
+const STATIC_CACHE = 'school-platform-static-v2';
+const DYNAMIC_CACHE = 'school-platform-dynamic-v2';
 
 // Files to cache for offline functionality
 const STATIC_FILES = [
@@ -85,7 +85,10 @@ self.addEventListener('fetch', event => {
   }
   
   // Determine cache strategy based on request type
-  let strategy = CACHE_STRATEGIES.NETWORK_FIRST;
+  // Network-first for HTML to always get latest UI
+  let strategy = request.destination === 'document'
+    ? CACHE_STRATEGIES.NETWORK_FIRST
+    : CACHE_STRATEGIES.NETWORK_FIRST;
   
   if (STATIC_FILES.includes(url.pathname) || 
       request.destination === 'style' || 
