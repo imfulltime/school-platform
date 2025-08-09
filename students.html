@@ -2044,10 +2044,12 @@
             // Reset form first
             document.getElementById('addStudentForm').reset();
             
-            // Reset photo if function exists
-            if (typeof deletePhoto === 'function') {
-                deletePhoto();
-            }
+            // Reset photo without confirmation dialog
+            currentPhoto = null;
+            const photoPreview = document.getElementById('photoPreview');
+            const uploadArea = document.getElementById('uploadArea');
+            if (photoPreview) photoPreview.style.display = 'none';
+            if (uploadArea) uploadArea.style.display = 'block';
             
             // Populate class dropdown
             profileSystem.populateAddStudentClassFilter();
@@ -2092,10 +2094,12 @@
             document.getElementById('addStudentModal').style.display = 'none';
             document.getElementById('addStudentForm').reset();
             
-            // Reset photo upload
-            if (typeof deletePhoto === 'function') {
-                deletePhoto();
-            }
+            // Reset photo without confirmation dialog
+            currentPhoto = null;
+            const photoPreview = document.getElementById('photoPreview');
+            const uploadArea = document.getElementById('uploadArea');
+            if (photoPreview) photoPreview.style.display = 'none';
+            if (uploadArea) uploadArea.style.display = 'block';
             
             // Generate new student ID for next use
             generateStudentId();

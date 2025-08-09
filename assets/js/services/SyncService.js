@@ -227,20 +227,65 @@ class SyncService {
 
             if (error) throw error;
 
+            // SMART MERGE: Don't overwrite local data if server is empty
             let loadCount = 0;
-            if (data && data.length > 0) {
-                for (const item of data) {
-                    if (item.data_key && item.data_value) {
-                        localStorage.setItem(item.data_key, item.data_value);
-                        loadCount++;
+            const hasServerData = data && data.length > 0;
+            const localDataExists = this.storageKeys.some(key => {
+                const localData = localStorage.getItem(key);
+                return localData && localData !== '{}' && localData !== '[]' && localData !== 'null';
+            });
+
+            if (hasServerData) {
+                // Check if we need to merge or replace
+                if (localDataExists) {
+                    console.log('🔄 Both local and server data exist, merging...');
+                    
+                    // Create a map of server data
+                    const serverDataMap = {};
+                    for (const item of data) {
+                        if (item.data_key && item.data_value) {
+                            serverDataMap[item.data_key] = item.data_value;
+                        }
+                    }
+                    
+                    // For each storage key, decide whether to use local or server data
+                    for (const key of this.storageKeys) {
+                        const localData = localStorage.getItem(key);
+                        const serverData = serverDataMap[key];
+                        
+                        if (serverData && (!localData || localData === '{}' || localData === '[]')) {
+                            // No local data, use server data
+                            localStorage.setItem(key, serverData);
+                            loadCount++;
+                        } else if (localData && (!serverData || serverData === '{}' || serverData === '[]')) {
+                            // No server data but have local data, upload local to server
+                            console.log(`📤 Uploading local data for ${key} to server...`);
+                            await this.syncToSupabase(key, localData);
+                        } else if (serverData && localData) {
+                            // Both exist, use server data (assuming it's more recent)
+                            localStorage.setItem(key, serverData);
+                            loadCount++;
+                        }
+                    }
+                } else {
+                    // No local data, safe to load everything from server
+                    for (const item of data) {
+                        if (item.data_key && item.data_value) {
+                            localStorage.setItem(item.data_key, item.data_value);
+                            loadCount++;
+                        }
                     }
                 }
+            } else if (localDataExists) {
+                // No server data but have local data, upload it
+                console.log('📤 No server data found, uploading local data...');
+                await this.saveToSupabase();
             }
 
             console.log(`✅ Loaded ${loadCount} items from server`);
             
             // Trigger page refresh to show synced data
-            if (loadCount > 0) {
+            if (loadCount > 0 || hasServerData) {
                 window.dispatchEvent(new Event('dataLoaded'));
             }
             
