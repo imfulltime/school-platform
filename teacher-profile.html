@@ -549,18 +549,41 @@
             }
 
             async loadProfile() {
+                console.log('🔄 Loading teacher profile...');
                 try {
-                    if (window.authService) {
-                        await window.authService.initialize();
-                        const ok = await window.authService.requireAuth();
-                        if (!ok) return;
+                    // Check if services are available
+                    if (!window.authService) {
+                        console.error('❌ AuthService not available');
+                        this.showWelcome();
+                        return;
                     }
-                    let profile = {};
-                    if (window.dataService) {
-                        await window.dataService.initialize();
-                        profile = await window.dataService.getTeacherProfile();
+                    
+                    if (!window.dataService) {
+                        console.error('❌ DataService not available');
+                        this.showWelcome();
+                        return;
                     }
+                    
+                    console.log('✅ Services available, checking authentication...');
+                    
+                    // Initialize and check authentication
+                    await window.authService.initialize();
+                    const ok = await window.authService.requireAuth();
+                    if (!ok) {
+                        console.log('❌ Authentication failed');
+                        return;
+                    }
+                    
+                    console.log('✅ Authentication successful, loading profile...');
+                    
+                    // Initialize DataService and get profile
+                    await window.dataService.initialize();
+                    const profile = await window.dataService.getTeacherProfile();
+                    
+                    console.log('📄 Profile loaded:', profile);
+                    
                     if (profile && Object.keys(profile).length > 0) {
+                        console.log('✅ Profile found, displaying...');
                         this.displayProfile({
                             firstName: profile.first_name || profile.firstName || '',
                             lastName: profile.last_name || profile.lastName || '',
@@ -572,10 +595,12 @@
                         document.getElementById('profileCard').style.display = 'block';
                         document.getElementById('teacherStats').style.display = 'grid';
                     } else {
+                        console.log('⚠️ No profile found, showing welcome...');
                         this.showWelcome();
                     }
                 } catch (e) {
-                    console.log('Error loading teacher profile:', e.message);
+                    console.error('❌ Error loading teacher profile:', e);
+                    console.error('Error stack:', e.stack);
                     this.showWelcome();
                 }
             }
@@ -775,23 +800,61 @@
         }
 
         // Initialize the teacher profile manager
-        const profileManager = new TeacherProfileManager();
+        let profileManager;
+        
+        // Ensure page shows something even if initialization fails
+        function initializeWithFallback() {
+            try {
+                console.log('🚀 Initializing Teacher Profile Manager...');
+                profileManager = new TeacherProfileManager();
+                console.log('✅ Teacher Profile Manager created successfully');
+            } catch (error) {
+                console.error('❌ Failed to initialize Teacher Profile Manager:', error);
+                // Fallback: show welcome card
+                document.getElementById('welcomeCard').style.display = 'block';
+                document.getElementById('profileCard').style.display = 'none';
+                document.getElementById('teacherStats').style.display = 'none';
+            }
+        }
+        
+        // Initialize when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeWithFallback);
+        } else {
+            initializeWithFallback();
+        }
 
         // Global functions
         function showCreateProfile() {
-            profileManager.createProfile();
+            if (profileManager) {
+                profileManager.createProfile();
+            } else {
+                console.error('Profile manager not initialized');
+            }
         }
 
         function toggleEdit() {
-            profileManager.toggleEdit();
+            if (profileManager) {
+                profileManager.toggleEdit();
+            } else {
+                console.error('Profile manager not initialized');
+            }
         }
 
         function saveProfile() {
-            profileManager.saveProfile();
+            if (profileManager) {
+                profileManager.saveProfile();
+            } else {
+                console.error('Profile manager not initialized');
+            }
         }
 
         function cancelEdit() {
-            profileManager.toggleEdit(); // Go back to view mode
+            if (profileManager) {
+                profileManager.toggleEdit(); // Go back to view mode
+            } else {
+                console.error('Profile manager not initialized');
+            }
         }
 
         // Photo upload functions
